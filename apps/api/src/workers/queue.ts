@@ -41,6 +41,10 @@ export async function initWorkers() {
     setInterval(() => {
       void cleanupExpiredTokens();
     }, 15 * 60_000).unref();
+    
+    setInterval(() => {
+      void pollContestStatus();
+    }, 30_000).unref();
     return;
   }
 
@@ -53,6 +57,10 @@ export async function initWorkers() {
     {},
     { repeat: { every: 15 * 60_000 }, removeOnComplete: true, removeOnFail: true }
   );
+
+  setInterval(() => {
+    void pollContestStatus();
+  }, 30_000).unref();
 
   // Workers
   new Worker(

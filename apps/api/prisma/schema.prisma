@@ -45,6 +45,7 @@ model User {
   sheets        PracticeSheet[]    @relation("SheetCreatedBy")
   addedProblems SheetProblem[]     @relation("ProblemAddedBy")
   completions   ProblemCompletion[]
+  discussionMessages ProblemDiscussionMessage[]
 
   @@map("users")
 }
@@ -61,6 +62,7 @@ model Squad {
   members   SquadMember[]
   threads   ContestThread[]
   sheets    PracticeSheet[]
+  messages  ProblemDiscussionMessage[]
 
   @@map("squads")
 }
@@ -179,3 +181,48 @@ model ProblemCompletion {
   @@unique([problemId, userId], name: "problemId_userId")
   @@map("problem_completions")
 }
+
+model ActiveContest {
+  id          String   @id @default(uuid())
+  platform    Platform
+  contestName String   @map("contest_name")
+  contestUrl  String?  @map("contest_url")
+  startTime   DateTime @map("start_time")
+  endTime     DateTime @map("end_time")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  problems    ContestProblem[]
+
+  @@map("active_contests")
+}
+
+model ContestProblem {
+  id          String   @id @default(uuid())
+  contestId   String   @map("contest_id")
+  index       String   // e.g. "A", "B", "C"
+  name        String
+  problemUrl  String?  @map("problem_url")
+
+  contest     ActiveContest @relation(fields: [contestId], references: [id])
+  messages    ProblemDiscussionMessage[]
+
+  @@unique([contestId, index], name: "contestId_index")
+  @@map("contest_problems")
+}
+
+model ProblemDiscussionMessage {
+  id          String   @id @default(uuid())
+  problemId   String   @map("problem_id")
+  squadId     String   @map("squad_id")
+  userId      String   @map("user_id")
+  content     String
+  imageBase64 String?  @map("image_base64")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  problem     ContestProblem @relation(fields: [problemId], references: [id])
+  squad       Squad          @relation(fields: [squadId], references: [id])
+  user        User           @relation(fields: [userId], references: [id])
+
+  @@map("problem_discussion_messages")
+}
+
