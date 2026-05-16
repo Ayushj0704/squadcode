@@ -1,0 +1,181 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SquadMemberRole {
+  admin
+  member
+}
+
+enum Platform {
+  codeforces
+  leetcode
+  github
+}
+
+enum ThreadPlatform {
+  codeforces
+  leetcode
+}
+
+enum Difficulty {
+  easy
+  medium
+  hard
+}
+
+model User {
+  id        String   @id @default(uuid())
+  clerkId   String   @unique @map("clerk_id")
+  username  String   @unique
+  email     String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  squadsCreated Squad[]            @relation("SquadCreatedBy")
+  memberships   SquadMember[]
+  connections   PlatformConnection[]
+  caches        PlatformDataCache[]
+  threads       ContestThread[]    @relation("ThreadCreatedBy")
+  posts         ThreadPost[]
+  sheets        PracticeSheet[]    @relation("SheetCreatedBy")
+  addedProblems SheetProblem[]     @relation("ProblemAddedBy")
+  completions   ProblemCompletion[]
+
+  @@map("users")
+}
+
+model Squad {
+  id          String     @id @default(uuid())
+  name        String
+  description String?
+  inviteCode  String     @unique @map("invite_code")
+  createdById String     @map("created_by")
+  createdAt   DateTime   @default(now()) @map("created_at")
+
+  createdBy User         @relation("SquadCreatedBy", fields: [createdById], references: [id])
+  members   SquadMember[]
+  threads   ContestThread[]
+  sheets    PracticeSheet[]
+
+  @@map("squads")
+}
+
+model SquadMember {
+  id       String          @id @default(uuid())
+  squadId  String          @map("squad_id")
+  userId   String          @map("user_id")
+  role     SquadMemberRole @default(member)
+  joinedAt DateTime        @default(now()) @map("joined_at")
+
+  squad Squad @relation(fields: [squadId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@unique([squadId, userId], name: "squadId_userId")
+  @@map("squad_members")
+}
+
+model PlatformConnection {
+  id                String    @id @default(uuid())
+  userId            String    @map("user_id")
+  platform          Platform
+  username          String
+  verified          Boolean   @default(false)
+  verificationToken String?   @map("verification_token")
+  tokenExpiresAt    DateTime? @map("token_expires_at")
+  connectedAt       DateTime  @default(now()) @map("connected_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, platform], name: "userId_platform")
+  @@map("platform_connections")
+}
+
+model PlatformDataCache {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  platform  Platform
+  data      Json
+  fetchedAt DateTime @default(now()) @map("fetched_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, platform], name: "userId_platform_cache")
+  @@map("platform_data_cache")
+}
+
+model ContestThread {
+  id          String         @id @default(uuid())
+  squadId     String         @map("squad_id")
+  title       String
+  platform    ThreadPlatform
+  contestName String         @map("contest_name")
+  createdById String         @map("created_by")
+  createdAt   DateTime       @default(now()) @map("created_at")
+
+  squad     Squad       @relation(fields: [squadId], references: [id])
+  createdBy User        @relation("ThreadCreatedBy", fields: [createdById], references: [id])
+  posts     ThreadPost[]
+
+  @@map("contest_threads")
+}
+
+model ThreadPost {
+  id        String   @id @default(uuid())
+  threadId  String   @map("thread_id")
+  userId    String   @map("user_id")
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  thread ContestThread @relation(fields: [threadId], references: [id])
+  user   User          @relation(fields: [userId], references: [id])
+
+  @@map("thread_posts")
+}
+
+model PracticeSheet {
+  id          String   @id @default(uuid())
+  squadId     String   @map("squad_id")
+  title       String
+  createdById String   @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  squad     Squad         @relation(fields: [squadId], references: [id])
+  createdBy User          @relation("SheetCreatedBy", fields: [createdById], references: [id])
+  problems  SheetProblem[]
+
+  @@map("practice_sheets")
+}
+
+model SheetProblem {
+  id          String     @id @default(uuid())
+  sheetId     String     @map("sheet_id")
+  problemName String     @map("problem_name")
+  platform    String
+  problemUrl  String     @map("problem_url")
+  difficulty  Difficulty
+  addedById   String     @map("added_by")
+
+  sheet       PracticeSheet       @relation(fields: [sheetId], references: [id])
+  addedBy     User                @relation("ProblemAddedBy", fields: [addedById], references: [id])
+  completions ProblemCompletion[]
+
+  @@map("sheet_problems")
+}
+
+model ProblemCompletion {
+  id          String   @id @default(uuid())
+  problemId   String   @map("problem_id")
+  userId      String   @map("user_id")
+  completedAt DateTime @default(now()) @map("completed_at")
+
+  problem SheetProblem @relation(fields: [problemId], references: [id])
+  user    User         @relation(fields: [userId], references: [id])
+
+  @@unique([problemId, userId], name: "problemId_userId")
+  @@map("problem_completions")
+}
