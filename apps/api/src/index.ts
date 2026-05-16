@@ -13,12 +13,8 @@ import { platformDataRouter } from "./routes/platformData.js";
 import { threadsRouter } from "./routes/threads.js";
 import { sheetsRouter } from "./routes/sheets.js";
 import { initWorkers } from "./workers/queue.js";
-import { initWebSockets } from "./websockets/index.js";
-import { createServer } from "http";
 
 const app = express();
-const server = createServer(app);
-initWebSockets(server);
 
 app.use(helmet());
 app.use(cors({ origin: true, credentials: true }));
@@ -35,7 +31,6 @@ app.use("/api", connectionsRouter);
 app.use("/api", platformDataRouter);
 app.use("/api", threadsRouter);
 app.use("/api", sheetsRouter);
-app.use("/api", contestsRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
@@ -43,8 +38,5 @@ app.use(errorHandler);
 app.listen(env.PORT, () => {
   console.log(`api listening on http://localhost:${env.PORT}`);
 });
-
-void initWorkers();
-
 
 void initWorkers();

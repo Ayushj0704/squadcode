@@ -9,8 +9,6 @@ import { ThreadsListPage } from "./pages/ThreadsListPage";
 import { ThreadDetailPage } from "./pages/ThreadDetailPage";
 import { SheetsListPage } from "./pages/SheetsListPage";
 import { SheetDetailPage } from "./pages/SheetDetailPage";
-import { ContestsListPage } from "./pages/ContestsListPage";
-import { ContestDetailPage } from "./pages/ContestDetailPage";
 
 export default function App() {
   const missingClerkKey = !import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -64,10 +62,6 @@ export default function App() {
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
-  );
-}
-="/" replace />} />
     </Routes>
   );
 }
