@@ -6,10 +6,6 @@ const ALFA_BASE = "https://alfa-leetcode-api.onrender.com";
 
 const alfaSchema = z
   .object({
-    totalSolved: z.coerce.number().optional(),
-    easySolved: z.coerce.number().optional(),
-    mediumSolved: z.coerce.number().optional(),
-    hardSolved: z.coerce.number().optional(),
     ranking: z.coerce.number().optional(),
     streak: z.coerce.number().optional(),
     username: z.string().optional(),
@@ -19,27 +15,48 @@ const alfaSchema = z
   })
   .passthrough();
 
-export async function fetchLeetCodeData(username: string): Promise<LeetCodeCache> {
-  const res = await axios.get(`${ALFA_BASE}/${encodeURIComponent(username)}`, {
-    headers: { Accept: "application/json" },
-    timeout: 20_000,
-    validateStatus: () => true
-  });
+const alfaSolvedSchema = z
+  .object({
+    solvedProblem: z.coerce.number().optional(),
+    easySolved: z.coerce.number().optional(),
+    mediumSolved: z.coerce.number().optional(),
+    hardSolved: z.coerce.number().optional()
+  })
+  .passthrough();
 
-  if (res.status === 404) throw new Error("LeetCode user not found");
-  if (res.status < 200 || res.status >= 300) {
+export async function fetchLeetCodeData(username: string): Promise<LeetCodeCache> {
+  const [profileRes, solvedRes] = await Promise.all([
+    axios.get(`${ALFA_BASE}/${encodeURIComponent(username)}`, {
+      headers: { Accept: "application/json" },
+      timeout: 20_000,
+      validateStatus: () => true
+    }),
+    axios.get(`${ALFA_BASE}/${encodeURIComponent(username)}/solved`, {
+      headers: { Accept: "application/json" },
+      timeout: 20_000,
+      validateStatus: () => true
+    })
+  ]);
+
+  if (profileRes.status === 404) throw new Error("LeetCode user not found");
+  if (profileRes.status < 200 || profileRes.status >= 300) {
+    throw new LeetCodeBlockedError("LeetCode third-party API request failed.");
+  }
+  if (solvedRes.status < 200 || solvedRes.status >= 300) {
     throw new LeetCodeBlockedError("LeetCode third-party API request failed.");
   }
 
-  const data = alfaSchema.parse(res.data);
+  const profile = alfaSchema.parse(profileRes.data);
+  const solved = alfaSolvedSchema.parse(solvedRes.data);
+
   return {
-    username: data.username ?? username,
-    totalSolved: data.totalSolved ?? 0,
-    easySolved: data.easySolved ?? 0,
-    mediumSolved: data.mediumSolved ?? 0,
-    hardSolved: data.hardSolved ?? 0,
-    ranking: data.ranking,
-    streak: data.streak
+    username: profile.username ?? username,
+    totalSolved: solved.solvedProblem ?? 0,
+    easySolved: solved.easySolved ?? 0,
+    mediumSolved: solved.mediumSolved ?? 0,
+    hardSolved: solved.hardSolved ?? 0,
+    ranking: profile.ranking,
+    streak: profile.streak
   };
 }
 

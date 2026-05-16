@@ -2,6 +2,13 @@ import axios from "axios";
 import * as cheerio from "cheerio";
 import type { GitHubCache } from "./types.js";
 
+function isoDate(d: Date) {
+  const yyyy = d.getUTCFullYear();
+  const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(d.getUTCDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 export async function fetchGitHubData(username: string, githubToken?: string): Promise<GitHubCache> {
   const api = axios.create({
     baseURL: "https://api.github.com",
@@ -11,27 +18,33 @@ export async function fetchGitHubData(username: string, githubToken?: string): P
   const userRes = await api.get(`/users/${encodeURIComponent(username)}`);
   const user = userRes.data ?? {};
 
-  // Contribution graph is not in the REST API; scrape the profile page.
-  const pageRes = await axios.get(`https://github.com/${encodeURIComponent(username)}`, {
-    headers: { "User-Agent": "SquadCodeBot/1.0" }
-  });
+  // Contribution graph is not in the REST API; scrape the contributions endpoint.
+  const now = new Date();
+  const from = isoDate(new Date(Date.UTC(now.getUTCFullYear(), 0, 1)));
+  const to = isoDate(now);
+  const pageRes = await axios.get(
+    `https://github.com/users/${encodeURIComponent(username)}/contributions?from=${from}&to=${to}`,
+    { headers: { "User-Agent": "Mozilla/5.0" } }
+  );
   const $ = cheerio.load(pageRes.data as string);
 
-  const days = $("table.ContributionCalendar-grid td[data-date]")
+  const days = $("td[data-date]")
     .toArray()
     .map((el) => {
       const date = $(el).attr("data-date") ?? "";
       const countStr = $(el).attr("data-level") ?? "0";
       const level = Number(countStr);
-      const aria = $(el).attr("aria-label") ?? "";
-      const match = aria.match(/(\\d+)/);
-      const count = match ? Number(match[1]) : 0;
-      return { date, count, level };
+      return { date, count: 0, level };
     })
     .filter((d) => d.date);
 
-  const totalThisYear =
-    days.reduce((sum, d) => sum + (Number.isFinite(d.count) ? d.count : 0), 0) || undefined;
+  // GitHub renders per-day counts inside tool-tip sr-only text.
+  const text = $.text();
+  const matches = text.match(/\\b(\\d+) contributions? on\\b/g) ?? [];
+  const counts = matches
+    .map((m) => Number((m.match(/\\d+/) ?? [])[0] ?? 0))
+    .filter((n) => Number.isFinite(n));
+  const totalThisYear = counts.reduce((sum, n) => sum + n, 0) || undefined;
 
   return {
     username,
@@ -41,4 +54,3 @@ export async function fetchGitHubData(username: string, githubToken?: string): P
     totalContributionsThisYear: totalThisYear
   };
 }
-
