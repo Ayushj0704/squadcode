@@ -1,5 +1,4 @@
 import { Queue, Worker } from "bullmq";
-import { Redis } from "ioredis";
 import { env } from "../env.js";
 import { refreshSquad } from "./tasks/refreshSquad.js";
 import { cleanupExpiredTokens } from "./tasks/tokenCleanup.js";
@@ -9,15 +8,18 @@ const QUEUE_SQUAD_REFRESH = "squad-refresh";
 const QUEUE_TOKEN_CLEANUP = "token-cleanup";
 const QUEUE_ACTIVITY_FEED = "activity-feed";
 
-let connection: Redis | null = null;
+let connection: { url: string; maxRetriesPerRequest: null } | null = null;
 let squadRefreshQueue: Queue | null = null;
 let tokenCleanupQueue: Queue | null = null;
 let activityFeedQueue: Queue | null = null;
 
-function ensureConnection() {
+function getConnectionOptions() {
   if (!env.REDIS_URL) return null;
   if (connection) return connection;
-  connection = new Redis(env.REDIS_URL, { maxRetriesPerRequest: null });
+  connection = {
+    url: env.REDIS_URL,
+    maxRetriesPerRequest: null
+  };
   return connection;
 }
 
@@ -26,7 +28,7 @@ export function isQueueEnabled() {
 }
 
 export async function enqueueSquadRefresh(params: { squadId: string }) {
-  const conn = ensureConnection();
+  const conn = getConnectionOptions();
   if (!conn) {
     setImmediate(() => {
       void refreshSquad(params.squadId);
@@ -38,7 +40,7 @@ export async function enqueueSquadRefresh(params: { squadId: string }) {
 }
 
 export async function initWorkers() {
-  const conn = ensureConnection();
+  const conn = getConnectionOptions();
   if (!conn) {
     // Fallback: no Redis configured, run cleanup on interval in-process.
     setInterval(() => {
