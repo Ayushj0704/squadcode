@@ -1,3 +1,4 @@
+import type { Request, Response } from "express";
 import { Router } from "express";
 import { z } from "zod";
 import { requireClerkAuth, getClerkUserId } from "../auth/clerk.js";
@@ -55,27 +56,29 @@ platformDataRouter.get(
   })
 );
 
+async function refreshSquadData(req: Request, res: Response) {
+  const squadId = String(req.params.squad_id);
+  const clerkUserId = getClerkUserId(req);
+  const me = await prisma.user.findUnique({ where: { clerkId: clerkUserId } });
+  if (!me) {
+    res.status(400).json({ error: "User not synced yet. Call /api/auth/sync first." });
+    return;
+  }
+
+  const membership = await assertSquadMembership({ squadId, userId: me.id });
+  if (!membership) {
+    res.status(404).json({ error: "Squad not found" });
+    return;
+  }
+
+  await enqueueSquadRefresh({ squadId });
+  res.json({ ok: true });
+}
+
 platformDataRouter.post(
-  "/data/refresh/:squad_id",
+  ["/data/refresh/:squad_id", "/refresh/:squad_id"],
   requireClerkAuth,
-  asyncRoute(async (req, res) => {
-    const squadId = String(req.params.squad_id);
-    const clerkUserId = getClerkUserId(req);
-    const me = await prisma.user.findUnique({ where: { clerkId: clerkUserId } });
-    if (!me) {
-      res.status(400).json({ error: "User not synced yet. Call /api/auth/sync first." });
-      return;
-    }
-
-    const membership = await assertSquadMembership({ squadId, userId: me.id });
-    if (!membership) {
-      res.status(404).json({ error: "Squad not found" });
-      return;
-    }
-
-    await enqueueSquadRefresh({ squadId });
-    res.json({ ok: true });
-  })
+  asyncRoute(refreshSquadData)
 );
 
 platformDataRouter.post(

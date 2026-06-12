@@ -13,13 +13,46 @@ function randomInviteCode() {
   return out;
 }
 
+// List squads the authenticated user belongs to.
+squadsRouter.get(
+  "/mine",
+  requireClerkAuth,
+  asyncRoute(async (req, res) => {
+    const clerkUserId = getClerkUserId(req);
+    const me = await prisma.user.findUnique({ where: { clerkId: clerkUserId } });
+    if (!me) {
+      res.status(400).json({ error: "User not synced yet. Call /api/auth/sync first." });
+      return;
+    }
+
+    const memberships = await prisma.squadMember.findMany({
+      where: { userId: me.id },
+      include: {
+        squad: { select: { id: true, name: true, description: true, createdAt: true } }
+      },
+      orderBy: { joinedAt: "desc" }
+    });
+
+    const squads = memberships.map((m) => ({
+      id: m.squad.id,
+      name: m.squad.name,
+      description: m.squad.description,
+      createdAt: m.squad.createdAt,
+      role: m.role,
+      joinedAt: m.joinedAt
+    }));
+
+    res.json({ squads });
+  })
+);
+
 const createSquadSchema = z.object({
   name: z.string().min(2).max(48),
   description: z.string().max(240).optional()
 });
 
 squadsRouter.post(
-  "/squads",
+  "/",
   requireClerkAuth,
   asyncRoute(async (req, res) => {
     const { name, description } = createSquadSchema.parse(req.body);
@@ -62,7 +95,7 @@ squadsRouter.post(
 );
 
 squadsRouter.get(
-  "/squads/:id",
+  "/:id",
   requireClerkAuth,
   asyncRoute(async (req, res) => {
     const squadId = String(req.params.id);
@@ -97,7 +130,7 @@ squadsRouter.get(
 );
 
 squadsRouter.get(
-  "/squads/:id/dashboard",
+  "/:id/dashboard",
   requireClerkAuth,
   asyncRoute(async (req, res) => {
     const squadId = String(req.params.id);
@@ -139,8 +172,106 @@ squadsRouter.get(
   })
 );
 
+squadsRouter.delete(
+  "/:id",
+  requireClerkAuth,
+  asyncRoute(async (req, res) => {
+    const squadId = String(req.params.id);
+    const clerkUserId = getClerkUserId(req);
+    const me = await prisma.user.findUnique({ where: { clerkId: clerkUserId } });
+    if (!me) {
+      res.status(400).json({ error: "User not synced yet. Call /api/auth/sync first." });
+      return;
+    }
+
+    const membership = await prisma.squadMember.findUnique({
+      where: { squadId_userId: { squadId, userId: me.id } }
+    });
+    if (!membership) {
+      res.status(404).json({ error: "Squad not found" });
+      return;
+    }
+    if (membership.role !== "admin") {
+      res.status(403).json({ error: "Only squad admins can delete this squad." });
+      return;
+    }
+
+    await prisma.$transaction([
+      prisma.$executeRaw`
+        DELETE FROM "problem_completions"
+        WHERE "problem_id" IN (
+          SELECT "sheet_problems"."id"
+          FROM "sheet_problems"
+          INNER JOIN "practice_sheets"
+            ON "practice_sheets"."id" = "sheet_problems"."sheet_id"
+          WHERE "practice_sheets"."squad_id" = ${squadId}
+        )
+      `,
+      prisma.$executeRaw`
+        DELETE FROM "sheet_problems"
+        WHERE "sheet_id" IN (
+          SELECT "id" FROM "practice_sheets" WHERE "squad_id" = ${squadId}
+        )
+      `,
+      prisma.$executeRaw`DELETE FROM "practice_sheets" WHERE "squad_id" = ${squadId}`,
+      prisma.$executeRaw`
+        DELETE FROM "thread_posts"
+        WHERE "thread_id" IN (
+          SELECT "id" FROM "contest_threads" WHERE "squad_id" = ${squadId}
+        )
+      `,
+      prisma.$executeRaw`DELETE FROM "contest_threads" WHERE "squad_id" = ${squadId}`,
+      prisma.$executeRaw`DELETE FROM "activity_feed" WHERE "squad_id" = ${squadId}`,
+      prisma.$executeRaw`DELETE FROM "squad_members" WHERE "squad_id" = ${squadId}`,
+      prisma.$executeRaw`DELETE FROM "squads" WHERE "id" = ${squadId}`
+    ]);
+
+    res.json({ deleted: true, squadId });
+  })
+);
+
+squadsRouter.delete(
+  "/:id/members/me",
+  requireClerkAuth,
+  asyncRoute(async (req, res) => {
+    const squadId = String(req.params.id);
+    const clerkUserId = getClerkUserId(req);
+    const me = await prisma.user.findUnique({ where: { clerkId: clerkUserId } });
+    if (!me) {
+      res.status(400).json({ error: "User not synced yet. Call /api/auth/sync first." });
+      return;
+    }
+
+    const membership = await prisma.squadMember.findUnique({
+      where: { squadId_userId: { squadId, userId: me.id } }
+    });
+    if (!membership) {
+      res.status(404).json({ error: "Squad not found" });
+      return;
+    }
+
+    if (membership.role === "admin") {
+      const otherAdminCount = await prisma.squadMember.count({
+        where: { squadId, role: "admin", userId: { not: me.id } }
+      });
+      if (otherAdminCount === 0) {
+        res.status(400).json({
+          error: "You are the only admin. Delete the squad instead, or add another admin first."
+        });
+        return;
+      }
+    }
+
+    await prisma.squadMember.delete({
+      where: { squadId_userId: { squadId, userId: me.id } }
+    });
+
+    res.json({ left: true, squadId });
+  })
+);
+
 squadsRouter.post(
-  "/squads/join/:invite_code",
+  "/join/:invite_code",
   requireClerkAuth,
   asyncRoute(async (req, res) => {
     const inviteCode = String(req.params.invite_code);

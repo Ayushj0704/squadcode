@@ -12,6 +12,7 @@ import { connectionsRouter } from "./routes/connections.js";
 import { platformDataRouter } from "./routes/platformData.js";
 import { threadsRouter } from "./routes/threads.js";
 import { sheetsRouter } from "./routes/sheets.js";
+import { feedRouter } from "./routes/feed.js";
 import { initWorkers } from "./workers/queue.js";
 
 const app = express();
@@ -24,13 +25,15 @@ if (process.env.CLERK_SECRET_KEY) {
   app.use(clerkMiddleware());
 }
 
-app.use("/api", healthRouter);
-app.use("/api", authRouter);
-app.use("/api", squadsRouter);
-app.use("/api", connectionsRouter);
-app.use("/api", platformDataRouter);
-app.use("/api", threadsRouter);
-app.use("/api", sheetsRouter);
+app.use("/api/health", healthRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/squads", squadsRouter);
+app.use("/api/connections", connectionsRouter);
+app.use("/api/data", platformDataRouter);
+app.use("/api/platformData", platformDataRouter);
+app.use("/api/threads", threadsRouter);
+app.use("/api/sheets", sheetsRouter);
+app.use("/api/feed", feedRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

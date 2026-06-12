@@ -4,12 +4,15 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { createApiClient } from "../lib/api";
 import { useSquadStore } from "../store/squadStore";
+import { usePageTitle } from "../lib/usePageTitle";
 
 export function OnboardingPage() {
+  usePageTitle("Squad Setup | SquadCode");
+
   const navigate = useNavigate();
   const { user } = useUser();
   const { getToken } = useAuth();
-  const setActiveSquadId = useSquadStore((s) => s.setActiveSquadId);
+  const setSelectedSquadId = useSquadStore((s) => s.setSelectedSquadId);
 
   const api = useMemo(() => createApiClient(() => getToken()), [getToken]);
 
@@ -35,8 +38,8 @@ export function OnboardingPage() {
     try {
       await syncMe();
       const res = await api.post("/squads", { name: squadName.trim() });
-      setActiveSquadId(res.data.squad.id);
-      navigate(`/squad/${res.data.squad.id}`);
+      setSelectedSquadId(res.data.squad.id);
+      navigate(`/dashboard`);
     } catch (e: unknown) {
       setStatus(errorMessage(e));
     } finally {
@@ -50,8 +53,8 @@ export function OnboardingPage() {
     try {
       await syncMe();
       const res = await api.post(`/squads/join/${inviteCode.trim()}`);
-      setActiveSquadId(res.data.squadId);
-      navigate(`/squad/${res.data.squadId}`);
+      setSelectedSquadId(res.data.squadId);
+      navigate(`/dashboard`);
     } catch (e: unknown) {
       setStatus(errorMessage(e));
     } finally {
@@ -61,76 +64,76 @@ export function OnboardingPage() {
 
   return (
     <div className="grid grid-cols-1 gap-6">
-      <div className="rounded-2xl border border-slate-900 bg-slate-900/20 p-6">
-        <h1 className="text-lg font-semibold">Onboarding</h1>
-        <p className="mt-2 text-sm text-slate-300">
-          Pick a username, then create or join a private squad. No discovery —
+      <div className="rounded-2xl border-2 border-border bg-surface-0 shadow-card p-6">
+        <h1 className="font-display text-lg font-bold">Squad setup</h1>
+        <p className="mt-2 text-sm text-ink-600">
+          Pick a username, then create or join a private squad. No discovery -
           only invite codes.
         </p>
       </div>
 
-      <div className="rounded-2xl border border-slate-900 bg-slate-900/20 p-6">
-        <div className="text-sm font-semibold">Your SquadCode username</div>
+      <div className="rounded-2xl border-2 border-border bg-surface-0 shadow-card p-6">
+        <div className="text-sm font-bold">Your SquadCode username</div>
         <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <label className="text-sm">
-            <div className="text-slate-300">Username</div>
+            <div className="text-ink-600">Username</div>
             <input
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-indigo-500"
+              className="mt-1 w-full rounded-xl border-2 border-ink-900 bg-white px-3 py-2 text-ink-800 outline-none transition focus:ring-2 focus:ring-brand-500/40"
               placeholder="e.g. piyush_icpc"
             />
           </label>
           <label className="text-sm">
-            <div className="text-slate-300">Email</div>
+            <div className="text-ink-600">Email</div>
             <input
               value={email}
               disabled
-              className="mt-1 w-full rounded-xl border border-slate-900 bg-slate-950/40 px-3 py-2 text-slate-400"
+              className="mt-1 w-full rounded-xl border border-border-subtle bg-black/20 px-3 py-2 text-ink-400"
             />
           </label>
         </div>
         {status ? (
-          <div className="mt-3 text-sm text-rose-300">{status}</div>
+          <div className="mt-3 text-sm text-coral-500 font-bold">{status}</div>
         ) : null}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <div className="rounded-2xl border border-slate-900 bg-slate-900/20 p-6">
-          <div className="text-sm font-semibold">Create a new squad</div>
-          <p className="mt-2 text-sm text-slate-300">
+        <div className="rounded-2xl border-2 border-border bg-surface-0 shadow-card p-6">
+          <div className="text-sm font-bold">Create a new squad</div>
+          <p className="mt-2 text-sm text-ink-600">
             You become admin and get an invite code.
           </p>
           <input
             value={squadName}
             onChange={(e) => setSquadName(e.target.value)}
-            className="mt-4 w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-indigo-500"
+            className="mt-4 w-full rounded-xl border-2 border-ink-900 bg-white px-3 py-2 text-ink-800 outline-none transition focus:ring-2 focus:ring-brand-500/40"
             placeholder="Squad name"
           />
           <button
             disabled={creating || !squadName.trim() || !username.trim()}
             onClick={onCreateSquad}
-            className="mt-4 w-full rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400 disabled:opacity-50"
+            className="mt-4 w-full rounded-xl border-2 border-ink-900 bg-brand-500 px-4 py-2 text-sm font-bold text-white shadow-pop transition active:translate-y-1 active:shadow-none hover:bg-brand-400 disabled:opacity-50"
           >
             {creating ? "Creating..." : "Create squad"}
           </button>
         </div>
 
-        <div className="rounded-2xl border border-slate-900 bg-slate-900/20 p-6">
-          <div className="text-sm font-semibold">Join via invite code</div>
-          <p className="mt-2 text-sm text-slate-300">
+        <div className="rounded-2xl border-2 border-border bg-surface-0 shadow-card p-6">
+          <div className="text-sm font-bold">Join via invite code</div>
+          <p className="mt-2 text-sm text-ink-600">
             Ask a squad admin for the code.
           </p>
           <input
             value={inviteCode}
             onChange={(e) => setInviteCode(e.target.value)}
-            className="mt-4 w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-indigo-500"
+            className="mt-4 w-full rounded-xl border-2 border-ink-900 bg-white px-3 py-2 text-ink-800 outline-none transition focus:ring-2 focus:ring-brand-500/40"
             placeholder="Invite code"
           />
           <button
             disabled={joining || !inviteCode.trim() || !username.trim()}
             onClick={onJoinSquad}
-            className="mt-4 w-full rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-2 text-sm font-semibold text-slate-100 hover:bg-slate-900 disabled:opacity-50"
+            className="mt-4 w-full rounded-xl border border-border-strong bg-surface-2 px-4 py-2 text-sm font-bold text-ink-800 hover:bg-surface-raised disabled:opacity-50"
           >
             {joining ? "Joining..." : "Join squad"}
           </button>

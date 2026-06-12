@@ -4,12 +4,15 @@ Private-by-default squad dashboard for competitive programmers.
 
 ## Repo layout
 
-- `apps/web`: React 18 + Vite + Tailwind
-- `apps/api`: Express + PostgreSQL + Redis/Bull jobs (skeleton)
+- `apps/web`: React 18 + Vite + Tailwind frontend
+- `apps/api`: Express + Prisma + PostgreSQL + Redis/BullMQ backend
+- `docs`: project notes, folder map, and maintenance docs
+
+For a detailed file map, see `docs/PROJECT_STRUCTURE.md`.
 
 ## Quickstart
 
-1. Create `.env` from `.env.example`
+1. Create the required `.env` files for `apps/api` and `apps/web`
 2. Install deps: `npm install`
 3. Start dev: `npm run dev`
 

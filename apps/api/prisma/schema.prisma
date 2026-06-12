@@ -29,6 +29,12 @@ enum Difficulty {
   hard
 }
 
+enum ActivityType {
+  problem_solved
+  rating_changed
+  contest_participated
+}
+
 model User {
   id        String   @id @default(uuid())
   clerkId   String   @unique @map("clerk_id")
@@ -45,6 +51,7 @@ model User {
   sheets        PracticeSheet[]    @relation("SheetCreatedBy")
   addedProblems SheetProblem[]     @relation("ProblemAddedBy")
   completions   ProblemCompletion[]
+  feedItems    ActivityFeed[]
 
   @@map("users")
 }
@@ -61,8 +68,26 @@ model Squad {
   members   SquadMember[]
   threads   ContestThread[]
   sheets    PracticeSheet[]
+  feedItems ActivityFeed[]
 
   @@map("squads")
+}
+
+model ActivityFeed {
+  id           String       @id @default(uuid())
+  squadId      String       @map("squad_id")
+  userId       String       @map("user_id")
+  platform     Platform
+  activityType ActivityType @map("activity_type")
+  description  String
+  metadata     Json         @default("{}")
+  createdAt    DateTime     @default(now()) @map("created_at")
+
+  squad Squad @relation(fields: [squadId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@index([squadId, createdAt])
+  @@map("activity_feed")
 }
 
 model SquadMember {

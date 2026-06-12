@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
 import axios from "axios";
 import { createApiClient } from "../lib/api";
+import { useSquadStore } from "../store/squadStore";
+import { usePageTitle } from "../lib/usePageTitle";
 
 type Thread = {
   id: string;
@@ -13,10 +15,12 @@ type Thread = {
 };
 
 export function ThreadsListPage() {
-  const { id } = useParams();
+  usePageTitle("Contest Threads | SquadCode");
+
   const navigate = useNavigate();
   const { getToken } = useAuth();
   const api = useMemo(() => createApiClient(() => getToken()), [getToken]);
+  const selectedSquadId = useSquadStore((s) => s.selectedSquadId);
 
   const [threads, setThreads] = useState<Thread[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -27,24 +31,29 @@ export function ThreadsListPage() {
   const [creating, setCreating] = useState(false);
 
   async function load() {
-    if (!id) return;
+    if (!selectedSquadId) return;
     setError(null);
-    const res = await api.get(`/threads/${id}`);
+    const res = await api.get(`/threads/${selectedSquadId}`);
     setThreads(res.data.threads);
   }
 
   useEffect(() => {
     void load().catch((e) => setError(errorMessage(e)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [selectedSquadId]);
 
   async function createThread() {
-    if (!id) return;
+    if (!selectedSquadId) return;
     setCreating(true);
     setError(null);
     try {
-      const res = await api.post("/threads", { squadId: id, title, platform, contestName });
-      navigate(`/squad/${id}/threads/${res.data.thread.id}`);
+      const res = await api.post("/threads", {
+        squadId: selectedSquadId,
+        title,
+        platform,
+        contestName
+      });
+      navigate(`/threads/${res.data.thread.id}`);
     } catch (e: unknown) {
       setError(errorMessage(e));
     } finally {
@@ -52,39 +61,47 @@ export function ThreadsListPage() {
     }
   }
 
+  if (!selectedSquadId) {
+    return (
+      <div className="rounded-2xl border-2 border-border bg-surface-0 shadow-card p-6 text-ink-600">
+        Select a squad from the dashboard first.
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 gap-6">
-      <div className="rounded-2xl border border-slate-900 bg-slate-900/20 p-6">
+      <div className="rounded-2xl border-2 border-border bg-surface-0 shadow-card p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-lg font-semibold">Threads</h1>
-            <p className="mt-1 text-sm text-slate-300">
+            <h1 className="font-display text-lg font-bold">Contest Threads</h1>
+            <p className="mt-1 text-sm text-ink-600">
               Private contest discussions for your squad.
             </p>
           </div>
           <button
             onClick={() => void load().catch((e) => setError(errorMessage(e)))}
-            className="rounded-xl border border-slate-800 bg-slate-900/40 px-3 py-2 text-sm font-semibold text-slate-100 hover:bg-slate-900"
+            className="rounded-xl border-2 border-ink-900 bg-white px-3 py-2 text-sm font-bold text-ink-800 shadow-pop-sm transition active:translate-y-0.5 active:shadow-none hover:bg-ink-100"
           >
             Refresh
           </button>
         </div>
-        {error ? <div className="mt-3 text-sm text-rose-300">{error}</div> : null}
+        {error ? <div className="mt-3 text-sm text-coral-500 font-bold">{error}</div> : null}
       </div>
 
-      <div className="rounded-2xl border border-slate-900 bg-slate-900/20 p-6">
-        <div className="text-sm font-semibold">Create thread</div>
+      <div className="rounded-2xl border-2 border-border bg-surface-0 shadow-card p-6">
+        <div className="text-sm font-bold">Create thread</div>
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-5 gap-3">
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="sm:col-span-2 w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-indigo-500"
+            className="sm:col-span-2 w-full rounded-xl border-2 border-ink-900 bg-white px-3 py-2 text-ink-800 outline-none transition focus:ring-2 focus:ring-brand-500/40"
             placeholder="Title"
           />
           <select
             value={platform}
             onChange={(e) => setPlatform(e.target.value as Thread["platform"])}
-            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-indigo-500"
+            className="w-full rounded-xl border-2 border-ink-900 bg-white px-3 py-2 text-ink-800 outline-none transition focus:ring-2 focus:ring-brand-500/40"
           >
             <option value="codeforces">Codeforces</option>
             <option value="leetcode">LeetCode</option>
@@ -92,14 +109,14 @@ export function ThreadsListPage() {
           <input
             value={contestName}
             onChange={(e) => setContestName(e.target.value)}
-            className="sm:col-span-2 w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-indigo-500"
+            className="sm:col-span-2 w-full rounded-xl border-2 border-ink-900 bg-white px-3 py-2 text-ink-800 outline-none transition focus:ring-2 focus:ring-brand-500/40"
             placeholder="Contest name"
           />
         </div>
         <button
           onClick={createThread}
           disabled={creating || !title.trim() || !contestName.trim()}
-          className="mt-4 rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400 disabled:opacity-50"
+          className="mt-4 rounded-xl border-2 border-ink-900 bg-brand-500 px-4 py-2 text-sm font-bold text-white shadow-pop transition active:translate-y-1 active:shadow-none hover:bg-brand-400 disabled:opacity-50"
         >
           {creating ? "Creating..." : "Create"}
         </button>
@@ -107,24 +124,24 @@ export function ThreadsListPage() {
 
       <div className="grid grid-cols-1 gap-3">
         {threads.length === 0 ? (
-          <div className="rounded-2xl border border-slate-900 bg-slate-900/10 p-6 text-sm text-slate-400">
+          <div className="rounded-2xl border-2 border-border bg-surface-2 p-6 text-sm text-ink-400">
             No threads yet.
           </div>
         ) : null}
         {threads.map((t) => (
           <button
             key={t.id}
-            onClick={() => navigate(`/squad/${id}/threads/${t.id}`)}
-            className="text-left rounded-2xl border border-slate-900 bg-slate-900/20 p-5 hover:bg-slate-900/30"
+            onClick={() => navigate(`/threads/${t.id}`)}
+            className="text-left rounded-2xl border-2 border-border bg-surface-0 shadow-card p-5 hover:bg-surface-raised/30"
           >
             <div className="flex items-center justify-between gap-3">
-              <div className="font-semibold">{t.title}</div>
-              <span className="text-xs text-slate-400">
+              <div className="font-bold">{t.title}</div>
+              <span className="text-xs text-ink-400">
                 {new Date(t.createdAt).toLocaleString()}
               </span>
             </div>
-            <div className="mt-1 text-sm text-slate-300">
-              {t.platform} • {t.contestName}
+            <div className="mt-1 text-sm text-ink-600">
+              {t.platform} - {t.contestName}
             </div>
           </button>
         ))}
@@ -141,4 +158,3 @@ function errorMessage(e: unknown) {
   if (e instanceof Error) return e.message;
   return "Something went wrong";
 }
-

@@ -36,7 +36,7 @@ const initiateSchema = z.object({
 });
 
 connectionsRouter.post(
-  "/connections/initiate",
+  "/initiate",
   requireClerkAuth,
   asyncRoute(async (req, res) => {
     const { platform, username } = initiateSchema.parse(req.body);
@@ -100,7 +100,7 @@ const verifySchema = z.object({
 });
 
 connectionsRouter.post(
-  "/connections/verify",
+  "/verify",
   requireClerkAuth,
   asyncRoute(async (req, res) => {
     const { platform, username } = verifySchema.parse(req.body);
@@ -176,7 +176,7 @@ connectionsRouter.post(
 );
 
 connectionsRouter.get(
-  "/connections/status",
+  "/status",
   requireClerkAuth,
   asyncRoute(async (req, res) => {
     const clerkUserId = getClerkUserId(req);

@@ -12,7 +12,7 @@ const syncBodySchema = z.object({
 });
 
 authRouter.post(
-  "/auth/sync",
+  "/sync",
   requireClerkAuth,
   asyncRoute(async (req, res) => {
     const { username, email } = syncBodySchema.parse(req.body);

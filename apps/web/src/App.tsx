@@ -2,13 +2,20 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { SignedIn, SignedOut } from "@clerk/clerk-react";
 import { LandingPage } from "./pages/LandingPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
-import { SquadDashboardPage } from "./pages/SquadDashboardPage";
+import { DashboardPage } from "./pages/DashboardPage";
 import { ConnectionsPage } from "./pages/ConnectionsPage";
 import { AppShell } from "./components/AppShell";
 import { ThreadsListPage } from "./pages/ThreadsListPage";
 import { ThreadDetailPage } from "./pages/ThreadDetailPage";
 import { SheetsListPage } from "./pages/SheetsListPage";
 import { SheetDetailPage } from "./pages/SheetDetailPage";
+import {
+  LegacySquadDashboardRedirect,
+  LegacySquadSheetsRedirect,
+  LegacySquadSheetDetailRedirect,
+  LegacySquadThreadsRedirect,
+  LegacySquadThreadDetailRedirect
+} from "./pages/LegacySquadRoutes";
 
 export default function App() {
   const missingClerkKey = !import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -54,11 +61,19 @@ export default function App() {
       >
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/settings/connections" element={<ConnectionsPage />} />
-        <Route path="/squad/:id" element={<SquadDashboardPage />} />
-        <Route path="/squad/:id/threads" element={<ThreadsListPage />} />
-        <Route path="/squad/:id/threads/:thread_id" element={<ThreadDetailPage />} />
-        <Route path="/squad/:id/sheets" element={<SheetsListPage />} />
-        <Route path="/squad/:id/sheets/:sheet_id" element={<SheetDetailPage />} />
+
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/threads" element={<ThreadsListPage />} />
+        <Route path="/threads/:thread_id" element={<ThreadDetailPage />} />
+        <Route path="/sheets" element={<SheetsListPage />} />
+        <Route path="/sheets/:sheet_id" element={<SheetDetailPage />} />
+
+        {/* Legacy URLs (keep old links working) */}
+        <Route path="/squad/:id" element={<LegacySquadDashboardRedirect />} />
+        <Route path="/squad/:id/threads" element={<LegacySquadThreadsRedirect />} />
+        <Route path="/squad/:id/threads/:thread_id" element={<LegacySquadThreadDetailRedirect />} />
+        <Route path="/squad/:id/sheets" element={<LegacySquadSheetsRedirect />} />
+        <Route path="/squad/:id/sheets/:sheet_id" element={<LegacySquadSheetDetailRedirect />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

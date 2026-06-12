@@ -46,4 +46,3 @@ export type GitHubCache = {
     level: number;
   }>;
 };
-

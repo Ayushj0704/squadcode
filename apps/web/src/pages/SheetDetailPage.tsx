@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import axios from "axios";
 import { createApiClient } from "../lib/api";
+import { useSquadStore } from "../store/squadStore";
+import { usePageTitle } from "../lib/usePageTitle";
 
 type Completion = { id: string; userId: string; completedAt: string };
 type Problem = {
@@ -22,11 +24,14 @@ type Sheet = {
 };
 
 export function SheetDetailPage() {
-  const { id, sheet_id } = useParams();
+  usePageTitle("Problem Sheet | SquadCode");
+
+  const { sheet_id } = useParams();
   const navigate = useNavigate();
   const { getToken } = useAuth();
   const { user } = useUser();
   const api = useMemo(() => createApiClient(() => getToken()), [getToken]);
+  const selectedSquadId = useSquadStore((s) => s.selectedSquadId);
 
   const [sheet, setSheet] = useState<Sheet | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -38,9 +43,9 @@ export function SheetDetailPage() {
   const [adding, setAdding] = useState(false);
 
   async function load() {
-    if (!id || !sheet_id) return;
+    if (!selectedSquadId || !sheet_id) return;
     setError(null);
-    const res = await api.get(`/sheets/${id}`);
+    const res = await api.get(`/sheets/${selectedSquadId}`);
     const found = (res.data.sheets as Sheet[]).find((s) => s.id === sheet_id) ?? null;
     if (!found) {
       setError("Sheet not found");
@@ -54,6 +59,14 @@ export function SheetDetailPage() {
     void load().catch((e) => setError(errorMessage(e)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sheet_id]);
+
+  if (!selectedSquadId) {
+    return (
+      <div className="rounded-2xl border-2 border-border bg-surface-0 shadow-card p-6 text-ink-600">
+        Select a squad from the dashboard first.
+      </div>
+    );
+  }
 
   async function addProblem() {
     if (!sheet_id) return;
@@ -91,49 +104,49 @@ export function SheetDetailPage() {
 
   return (
     <div className="grid grid-cols-1 gap-6">
-      <div className="rounded-2xl border border-slate-900 bg-slate-900/20 p-6">
+      <div className="rounded-2xl border-2 border-border bg-surface-0 shadow-card p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
             <button
-              onClick={() => navigate(`/squad/${id}/sheets`)}
-              className="text-xs text-slate-400 hover:text-slate-200"
+              onClick={() => navigate(`/sheets`)}
+              className="text-xs text-ink-400 hover:text-ink-800"
             >
-              ← Back to sheets
+              Back to sheets
             </button>
-            <h1 className="mt-2 text-lg font-semibold">{sheet?.title ?? "Sheet"}</h1>
-            <p className="mt-1 text-sm text-slate-300">
+            <h1 className="mt-2 font-display text-lg font-bold">{sheet?.title ?? "Sheet"}</h1>
+            <p className="mt-1 text-sm text-ink-600">
               {sheet ? `${sheet.problems.length} problems` : "Loading..."}
             </p>
           </div>
           <button
             onClick={() => void load().catch((e) => setError(errorMessage(e)))}
-            className="rounded-xl border border-slate-800 bg-slate-900/40 px-3 py-2 text-sm font-semibold text-slate-100 hover:bg-slate-900"
+            className="rounded-xl border-2 border-ink-900 bg-white px-3 py-2 text-sm font-bold text-ink-800 shadow-pop-sm transition active:translate-y-0.5 active:shadow-none hover:bg-ink-100"
           >
             Refresh
           </button>
         </div>
-        {error ? <div className="mt-3 text-sm text-rose-300">{error}</div> : null}
+        {error ? <div className="mt-3 text-sm text-coral-500 font-bold">{error}</div> : null}
       </div>
 
-      <div className="rounded-2xl border border-slate-900 bg-slate-900/20 p-6">
-        <div className="text-sm font-semibold">Add problem</div>
+      <div className="rounded-2xl border-2 border-border bg-surface-0 shadow-card p-6">
+        <div className="text-sm font-bold">Add problem</div>
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-6 gap-3">
           <input
             value={problemName}
             onChange={(e) => setProblemName(e.target.value)}
-            className="sm:col-span-2 w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-indigo-500"
+            className="sm:col-span-2 w-full rounded-xl border-2 border-ink-900 bg-white px-3 py-2 text-ink-800 outline-none transition focus:ring-2 focus:ring-brand-500/40"
             placeholder="Problem name"
           />
           <input
             value={platform}
             onChange={(e) => setPlatform(e.target.value)}
-            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-indigo-500"
+            className="w-full rounded-xl border-2 border-ink-900 bg-white px-3 py-2 text-ink-800 outline-none transition focus:ring-2 focus:ring-brand-500/40"
             placeholder="Platform"
           />
           <select
             value={difficulty}
             onChange={(e) => setDifficulty(e.target.value as Problem["difficulty"])}
-            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-indigo-500"
+            className="w-full rounded-xl border-2 border-ink-900 bg-white px-3 py-2 text-ink-800 outline-none transition focus:ring-2 focus:ring-brand-500/40"
           >
             <option value="easy">easy</option>
             <option value="medium">medium</option>
@@ -142,48 +155,48 @@ export function SheetDetailPage() {
           <input
             value={problemUrl}
             onChange={(e) => setProblemUrl(e.target.value)}
-            className="sm:col-span-2 w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-indigo-500"
+            className="sm:col-span-2 w-full rounded-xl border-2 border-ink-900 bg-white px-3 py-2 text-ink-800 outline-none transition focus:ring-2 focus:ring-brand-500/40"
             placeholder="https://..."
           />
         </div>
         <button
           onClick={addProblem}
           disabled={adding || !problemName.trim() || !problemUrl.trim()}
-          className="mt-4 rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400 disabled:opacity-50"
+          className="mt-4 rounded-xl border-2 border-ink-900 bg-brand-500 px-4 py-2 text-sm font-bold text-white shadow-pop transition active:translate-y-1 active:shadow-none hover:bg-brand-400 disabled:opacity-50"
         >
           {adding ? "Adding..." : "Add"}
         </button>
       </div>
 
-      <div className="rounded-2xl border border-slate-900 bg-slate-900/20 p-6">
-        <div className="text-sm font-semibold">Problems</div>
+      <div className="rounded-2xl border-2 border-border bg-surface-0 shadow-card p-6">
+        <div className="text-sm font-bold">Problems</div>
         <div className="mt-4 grid grid-cols-1 gap-3">
           {!sheet || sheet.problems.length === 0 ? (
-            <div className="text-sm text-slate-400">No problems yet.</div>
+            <div className="text-sm text-ink-400">No problems yet.</div>
           ) : null}
           {sheet?.problems.map((p) => {
             const mine = p.completions.some((c) => c.userId === myUserId);
             return (
-              <div key={p.id} className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+              <div key={p.id} className="rounded-2xl border-2 border-border bg-surface-2 p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <a
                       href={p.problemUrl}
                       target="_blank"
-                      className="font-semibold hover:underline"
+                      className="font-bold hover:underline"
                     >
                       {p.problemName}
                     </a>
-                    <div className="mt-1 text-sm text-slate-300">
-                      {p.platform} • {p.difficulty} • {p.completions.length} completions
+                    <div className="mt-1 text-sm text-ink-600">
+                      {p.platform} - {p.difficulty} - {p.completions.length} completions
                     </div>
                   </div>
                   <button
                     onClick={() => void toggleComplete(p.id)}
-                    className={`rounded-xl border px-3 py-2 text-sm font-semibold ${
+                    className={`rounded-xl border px-3 py-2 text-sm font-bold ${
                       mine
-                        ? "border-emerald-800 bg-emerald-950/30 text-emerald-200"
-                        : "border-slate-800 bg-slate-900/40 text-slate-100 hover:bg-slate-900"
+                        ? "border-mint-500 bg-mint-300/50 text-mint-500"
+                        : "border-border-strong bg-surface-2 text-ink-800 hover:bg-surface-raised"
                     }`}
                   >
                     {mine ? "Completed" : "Mark complete"}
@@ -206,4 +219,3 @@ function errorMessage(e: unknown) {
   if (e instanceof Error) return e.message;
   return "Something went wrong";
 }
-

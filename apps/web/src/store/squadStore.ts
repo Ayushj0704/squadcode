@@ -1,18 +1,29 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+
+const STORAGE_KEY = "squadcode_selected_squad";
 
 type SquadState = {
-  activeSquadId: string | null;
-  setActiveSquadId: (id: string | null) => void;
+  selectedSquadId: string | null;
+  setSelectedSquadId: (id: string | null) => void;
 };
 
-export const useSquadStore = create<SquadState>()(
-  persist(
-    (set) => ({
-      activeSquadId: null,
-      setActiveSquadId: (id) => set({ activeSquadId: id })
-    }),
-    { name: "squadcode" }
-  )
-);
+function initialSelectedSquadId() {
+  try {
+    return localStorage.getItem(STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
 
+export const useSquadStore = create<SquadState>((set) => ({
+  selectedSquadId: initialSelectedSquadId(),
+  setSelectedSquadId: (id) => {
+    try {
+      if (id) localStorage.setItem(STORAGE_KEY, id);
+      else localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+    set({ selectedSquadId: id });
+  }
+}));

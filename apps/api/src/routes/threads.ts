@@ -4,11 +4,54 @@ import { requireClerkAuth, getClerkUserId } from "../auth/clerk.js";
 import { asyncRoute } from "../http/asyncRoute.js";
 import { prisma } from "../prisma.js";
 import { assertSquadMembership } from "../auth/membership.js";
+import { onThreadPostEvent, publishThreadPostEvent } from "../threadEvents.js";
 
 export const threadsRouter = Router();
 
 threadsRouter.get(
-  "/threads/:squad_id",
+  "/events/stream",
+  requireClerkAuth,
+  asyncRoute(async (req, res) => {
+    const clerkUserId = getClerkUserId(req);
+    const me = await prisma.user.findUnique({ where: { clerkId: clerkUserId } });
+    if (!me) {
+      res.status(400).json({ error: "User not synced yet. Call /api/auth/sync first." });
+      return;
+    }
+
+    const memberships = await prisma.squadMember.findMany({
+      where: { userId: me.id },
+      select: { squadId: true }
+    });
+    const allowedSquadIds = new Set(memberships.map((m) => m.squadId));
+
+    res.writeHead(200, {
+      "Cache-Control": "no-cache, no-transform",
+      Connection: "keep-alive",
+      "Content-Type": "text/event-stream",
+      "X-Accel-Buffering": "no"
+    });
+    res.write(": connected\n\n");
+
+    const send = (event: Parameters<typeof publishThreadPostEvent>[0]) => {
+      if (!allowedSquadIds.has(event.squadId)) return;
+      res.write(`event: ${event.type}\n`);
+      res.write(`data: ${JSON.stringify(event)}\n\n`);
+    };
+
+    const unsubscribe = onThreadPostEvent(send);
+    const heartbeat = setInterval(() => res.write(": keep-alive\n\n"), 25_000);
+
+    req.on("close", () => {
+      clearInterval(heartbeat);
+      unsubscribe();
+      res.end();
+    });
+  })
+);
+
+threadsRouter.get(
+  "/:squad_id",
   requireClerkAuth,
   asyncRoute(async (req, res) => {
     const squadId = String(req.params.squad_id);
@@ -40,7 +83,7 @@ const createThreadSchema = z.object({
 });
 
 threadsRouter.post(
-  "/threads",
+  "/",
   requireClerkAuth,
   asyncRoute(async (req, res) => {
     const body = createThreadSchema.parse(req.body);
@@ -70,7 +113,7 @@ threadsRouter.post(
 );
 
 threadsRouter.get(
-  "/threads/:id/posts",
+  "/:id/posts",
   requireClerkAuth,
   asyncRoute(async (req, res) => {
     const threadId = String(req.params.id);
@@ -106,7 +149,7 @@ const createPostSchema = z.object({
 });
 
 threadsRouter.post(
-  "/threads/:id/posts",
+  "/:id/posts",
   requireClerkAuth,
   asyncRoute(async (req, res) => {
     const threadId = String(req.params.id);
@@ -136,6 +179,15 @@ threadsRouter.post(
         content
       },
       include: { user: true }
+    });
+
+    publishThreadPostEvent({
+      type: "thread-post",
+      squadId: thread.squadId,
+      threadId,
+      postId: post.id,
+      authorUsername: post.user.username,
+      createdAt: post.createdAt.toISOString()
     });
 
     res.json({ post });

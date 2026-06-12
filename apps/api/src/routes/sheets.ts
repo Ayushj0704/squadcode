@@ -8,7 +8,7 @@ import { assertSquadMembership } from "../auth/membership.js";
 export const sheetsRouter = Router();
 
 sheetsRouter.get(
-  "/sheets/:squad_id",
+  "/:squad_id",
   requireClerkAuth,
   asyncRoute(async (req, res) => {
     const squadId = String(req.params.squad_id);
@@ -43,7 +43,7 @@ const createSheetSchema = z.object({
 });
 
 sheetsRouter.post(
-  "/sheets",
+  "/",
   requireClerkAuth,
   asyncRoute(async (req, res) => {
     const body = createSheetSchema.parse(req.body);
@@ -78,7 +78,7 @@ const addProblemSchema = z.object({
 });
 
 sheetsRouter.post(
-  "/sheets/:id/problems",
+  "/:id/problems",
   requireClerkAuth,
   asyncRoute(async (req, res) => {
     const sheetId = String(req.params.id);
@@ -116,7 +116,7 @@ sheetsRouter.post(
 );
 
 sheetsRouter.post(
-  "/sheets/:id/problems/:problem_id/complete",
+  "/:id/problems/:problem_id/complete",
   requireClerkAuth,
   asyncRoute(async (req, res) => {
     const problemId = String(req.params.problem_id);

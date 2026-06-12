@@ -1,8 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
 import axios from "axios";
 import { createApiClient } from "../lib/api";
+import { useSquadStore } from "../store/squadStore";
+import { usePageTitle } from "../lib/usePageTitle";
+import { Card } from "../components/ui/Card";
+import { Button } from "../components/ui/Button";
+import { Input } from "../components/ui/Input";
+
 
 type Sheet = {
   id: string;
@@ -12,10 +18,10 @@ type Sheet = {
 };
 
 export function SheetsListPage() {
-  const { id } = useParams();
   const navigate = useNavigate();
   const { getToken } = useAuth();
   const api = useMemo(() => createApiClient(() => getToken()), [getToken]);
+  const selectedSquadId = useSquadStore((s) => s.selectedSquadId);
 
   const [sheets, setSheets] = useState<Sheet[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -23,24 +29,24 @@ export function SheetsListPage() {
   const [creating, setCreating] = useState(false);
 
   async function load() {
-    if (!id) return;
+    if (!selectedSquadId) return;
     setError(null);
-    const res = await api.get(`/sheets/${id}`);
+    const res = await api.get(`/sheets/${selectedSquadId}`);
     setSheets(res.data.sheets);
   }
 
   useEffect(() => {
     void load().catch((e) => setError(errorMessage(e)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [selectedSquadId]);
 
   async function createSheet() {
-    if (!id) return;
+    if (!selectedSquadId) return;
     setCreating(true);
     setError(null);
     try {
-      const res = await api.post("/sheets", { squadId: id, title });
-      navigate(`/squad/${id}/sheets/${res.data.sheet.id}`);
+      const res = await api.post("/sheets", { squadId: selectedSquadId, title });
+      navigate(`/sheets/${res.data.sheet.id}`);
     } catch (e: unknown) {
       setError(errorMessage(e));
     } finally {
@@ -48,68 +54,79 @@ export function SheetsListPage() {
     }
   }
 
+  usePageTitle("Problem Sheets | SquadCode");
+
+  if (!selectedSquadId) {
+    return (
+      <Card className="text-ink-600">Select a squad from the dashboard first.</Card>
+    );
+  }
+
+
   return (
     <div className="grid grid-cols-1 gap-6">
-      <div className="rounded-2xl border border-slate-900 bg-slate-900/20 p-6">
+      <Card>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-lg font-semibold">Practice sheets</h1>
-            <p className="mt-1 text-sm text-slate-300">
+            <h1 className="font-display text-lg font-bold">Problem Sheets</h1>
+            <p className="mt-1 text-sm text-ink-600">
               Shared problem lists for your squad.
             </p>
           </div>
-          <button
+          <Button
             onClick={() => void load().catch((e) => setError(errorMessage(e)))}
-            className="rounded-xl border border-slate-800 bg-slate-900/40 px-3 py-2 text-sm font-semibold text-slate-100 hover:bg-slate-900"
+            variant="secondary"
           >
             Refresh
-          </button>
+          </Button>
         </div>
-        {error ? <div className="mt-3 text-sm text-rose-300">{error}</div> : null}
-      </div>
+        {error ? <div className="mt-3 text-sm text-coral-500 font-bold">{error}</div> : null}
+      </Card>
 
-      <div className="rounded-2xl border border-slate-900 bg-slate-900/20 p-6">
-        <div className="text-sm font-semibold">Create sheet</div>
+      <Card>
+        <div className="text-sm font-bold">Create sheet</div>
         <div className="mt-4 flex flex-col sm:flex-row gap-3">
-          <input
+          <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="flex-1 rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-indigo-500"
             placeholder="Sheet title"
           />
-          <button
+          <Button
             onClick={createSheet}
             disabled={creating || !title.trim()}
-            className="rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400 disabled:opacity-50"
+            className="shrink-0"
           >
             {creating ? "Creating..." : "Create"}
-          </button>
+          </Button>
         </div>
-      </div>
+      </Card>
 
       <div className="grid grid-cols-1 gap-3">
         {sheets.length === 0 ? (
-          <div className="rounded-2xl border border-slate-900 bg-slate-900/10 p-6 text-sm text-slate-400">
+          <div className="rounded-2xl border border-border-subtle bg-surface-0 p-6 text-sm text-ink-400">
             No sheets yet.
           </div>
         ) : null}
         {sheets.map((s) => {
           const totalProblems = s.problems.length;
-          const totalCompletions = s.problems.reduce((sum, p) => sum + p.completions.length, 0);
+          const totalCompletions = s.problems.reduce(
+            (sum, p) => sum + p.completions.length,
+            0
+          );
           return (
             <button
               key={s.id}
-              onClick={() => navigate(`/squad/${id}/sheets/${s.id}`)}
-              className="text-left rounded-2xl border border-slate-900 bg-slate-900/20 p-5 hover:bg-slate-900/30"
+              onClick={() => navigate(`/sheets/${s.id}`)}
+              className="text-left rounded-2xl border border-border-subtle bg-surface-1 p-5 hover:bg-surface-0 transition"
             >
               <div className="flex items-center justify-between gap-3">
-                <div className="font-semibold">{s.title}</div>
-                <span className="text-xs text-slate-400">
+                <div className="font-bold">{s.title}</div>
+                <span className="text-xs text-ink-400">
                   {new Date(s.createdAt).toLocaleString()}
                 </span>
               </div>
-              <div className="mt-1 text-sm text-slate-300">
-                {totalProblems} problems • {totalCompletions} completions
+              <div className="mt-1 text-sm text-ink-600">
+                {totalProblems} problems - {totalCompletions} completions
               </div>
             </button>
           );
@@ -117,6 +134,7 @@ export function SheetsListPage() {
       </div>
     </div>
   );
+
 }
 
 function errorMessage(e: unknown) {
@@ -127,4 +145,3 @@ function errorMessage(e: unknown) {
   if (e instanceof Error) return e.message;
   return "Something went wrong";
 }
-

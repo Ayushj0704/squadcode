@@ -3,13 +3,16 @@ import { Redis } from "ioredis";
 import { env } from "../env.js";
 import { refreshSquad } from "./tasks/refreshSquad.js";
 import { cleanupExpiredTokens } from "./tasks/tokenCleanup.js";
+import { pollActivityFeed } from "./tasks/activityFeed.js";
 
 const QUEUE_SQUAD_REFRESH = "squad-refresh";
 const QUEUE_TOKEN_CLEANUP = "token-cleanup";
+const QUEUE_ACTIVITY_FEED = "activity-feed";
 
 let connection: Redis | null = null;
 let squadRefreshQueue: Queue | null = null;
 let tokenCleanupQueue: Queue | null = null;
+let activityFeedQueue: Queue | null = null;
 
 function ensureConnection() {
   if (!env.REDIS_URL) return null;
@@ -41,17 +44,29 @@ export async function initWorkers() {
     setInterval(() => {
       void cleanupExpiredTokens();
     }, 15 * 60_000).unref();
+
+    setInterval(() => {
+      void pollActivityFeed();
+    }, 5 * 60_000).unref();
     return;
   }
 
   // One-off queues for scheduling repeatables.
   if (!tokenCleanupQueue) tokenCleanupQueue = new Queue(QUEUE_TOKEN_CLEANUP, { connection: conn });
+  if (!activityFeedQueue) activityFeedQueue = new Queue(QUEUE_ACTIVITY_FEED, { connection: conn });
 
   // Repeatable cleanup every 15 minutes.
   await tokenCleanupQueue.add(
     "cleanup",
     {},
     { repeat: { every: 15 * 60_000 }, removeOnComplete: true, removeOnFail: true }
+  );
+
+  // Repeatable activity feed poll every 5 minutes.
+  await activityFeedQueue.add(
+    "poll",
+    {},
+    { repeat: { every: 5 * 60_000 }, removeOnComplete: true, removeOnFail: true }
   );
 
   // Workers
@@ -67,6 +82,14 @@ export async function initWorkers() {
     QUEUE_TOKEN_CLEANUP,
     async () => {
       await cleanupExpiredTokens();
+    },
+    { connection: conn, concurrency: 1 }
+  );
+
+  new Worker(
+    QUEUE_ACTIVITY_FEED,
+    async () => {
+      await pollActivityFeed();
     },
     { connection: conn, concurrency: 1 }
   );
