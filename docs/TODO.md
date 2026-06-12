@@ -12,6 +12,7 @@
 
 - [x] Add activity feed schema.
 - [x] Apply `activity_feed` database migration.
+- [x] Add squad deletion indexes and refresh-route compatibility for production deploys.
 - [ ] Add automated tests for feed and dashboard routes.
 - [ ] Add a seed script for local development data.
 
