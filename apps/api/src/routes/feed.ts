@@ -28,7 +28,7 @@ feedRouter.get(
       where: { squadId },
       include: { user: { select: { id: true, username: true, email: true } } },
       orderBy: { createdAt: "desc" },
-      take: 20
+      take: 50
     });
 
     res.json({

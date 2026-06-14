@@ -41,7 +41,7 @@ async function upsertCache(params: {
   });
 }
 
-async function pollCodeforces(params: { squadId: string; userId: string; handle: string }) {
+export async function pollCodeforces(params: { squadId: string; userId: string; handle: string }) {
   const cacheRow = await prisma.platformDataCache.findUnique({
     where: { userId_platform_cache: { userId: params.userId, platform: "codeforces" } }
   });
@@ -68,25 +68,27 @@ async function pollCodeforces(params: { squadId: string; userId: string; handle:
     .filter((s) => s.verdict === "OK" && typeof s.id === "number" && s.problem?.name)
     .sort((a, b) => (b.creationTimeSeconds ?? 0) - (a.creationTimeSeconds ?? 0));
 
-  if (!isFirstSeen) {
-    const newAccepted = accepted.filter((s) => typeof s.id === "number" && !known.has(s.id));
-    for (const s of newAccepted) {
-      await prisma.activityFeed.create({
-        data: {
-          squadId: params.squadId,
-          userId: params.userId,
-          platform: "codeforces",
-          activityType: "problem_solved",
-          description: `solved ${s.problem?.name ?? "a problem"} on Codeforces`,
-          metadata: {
-            submissionId: s.id,
-            creationTimeSeconds: s.creationTimeSeconds,
-            contestId: s.problem?.contestId,
-            index: s.problem?.index
-          } as Prisma.InputJsonValue
-        }
-      });
-    }
+  let newAccepted = accepted.filter((s) => typeof s.id === "number" && !known.has(s.id));
+  if (isFirstSeen) {
+    newAccepted = newAccepted.slice(0, 5); // backfill 5 items on first load
+  }
+
+  for (const s of newAccepted) {
+    await prisma.activityFeed.create({
+      data: {
+        squadId: params.squadId,
+        userId: params.userId,
+        platform: "codeforces",
+        activityType: "problem_solved",
+        description: `solved ${s.problem?.name ?? "a problem"} on Codeforces`,
+        metadata: {
+          submissionId: s.id,
+          creationTimeSeconds: s.creationTimeSeconds,
+          contestId: s.problem?.contestId,
+          index: s.problem?.index
+        } as Prisma.InputJsonValue
+      }
+    });
   }
 
   const nextCache = {
@@ -105,7 +107,7 @@ async function pollCodeforces(params: { squadId: string; userId: string; handle:
   await upsertCache({ userId: params.userId, platform: "codeforces", data: nextCache });
 }
 
-async function pollLeetCode(params: { squadId: string; userId: string; username: string }) {
+export async function pollLeetCode(params: { squadId: string; userId: string; username: string }) {
   const cacheRow = await prisma.platformDataCache.findUnique({
     where: { userId_platform_cache: { userId: params.userId, platform: "leetcode" } }
   });
@@ -144,24 +146,26 @@ async function pollLeetCode(params: { squadId: string; userId: string; username:
     .sort((a, b) => b.timestamp - a.timestamp)
     .slice(0, 10);
 
-  if (!isFirstSeen) {
-    const newAccepted = normalized.filter((s) => !known.has(s.key));
-    for (const s of newAccepted) {
-      await prisma.activityFeed.create({
-        data: {
-          squadId: params.squadId,
-          userId: params.userId,
-          platform: "leetcode",
-          activityType: "problem_solved",
-          description: `solved ${s.title} on LeetCode`,
-          metadata: {
-            title: s.title,
-            titleSlug: s.titleSlug,
-            timestamp: s.timestamp
-          } as Prisma.InputJsonValue
-        }
-      });
-    }
+  let newAccepted = normalized.filter((s) => !known.has(s.key));
+  if (isFirstSeen) {
+    newAccepted = newAccepted.slice(0, 5); // backfill 5 items on first load
+  }
+
+  for (const s of newAccepted) {
+    await prisma.activityFeed.create({
+      data: {
+        squadId: params.squadId,
+        userId: params.userId,
+        platform: "leetcode",
+        activityType: "problem_solved",
+        description: `solved ${s.title} on LeetCode`,
+        metadata: {
+          title: s.title,
+          titleSlug: s.titleSlug,
+          timestamp: s.timestamp
+        } as Prisma.InputJsonValue
+      }
+    });
   }
 
   const nextCache = {

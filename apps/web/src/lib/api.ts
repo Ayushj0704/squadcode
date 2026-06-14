@@ -2,8 +2,7 @@ import axios from "axios";
 
 export function apiBaseUrl() {
   return (
-    (import.meta.env.VITE_API_BASE_URL as string | undefined) ??
-    "http://localhost:8080"
+    (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? ""
   );
 }
 
@@ -28,6 +27,7 @@ export function createApiClient(getToken: () => Promise<string | null>) {
 export type SquadMember = {
   id: string;
   role: "admin" | "member";
+  nickname?: string | null;
   joinedAt: string;
   user: { id: string; username: string; email: string };
 };

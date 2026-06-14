@@ -8,9 +8,7 @@ export function LandingPage() {
     <div className="min-h-screen overflow-hidden text-ink-800">
       <header className="mx-auto flex max-w-7xl items-center justify-between px-4 py-5 sm:px-6">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl border-2 border-ink-900 bg-grad-sun font-display font-extrabold text-ink-900 shadow-pop">
-            SC
-          </div>
+          <img src="/logo.png" alt="SquadCode Logo" className="h-11 w-11 rounded-2xl object-cover border-2 border-ink-900 shadow-pop" />
           <div>
             <div className="font-display font-bold text-ink-900">SquadCode</div>
             <div className="text-xs text-ink-400">Private CP squad hub</div>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth, useUser } from "@clerk/clerk-react";
 import axios from "axios";
 import { createApiClient, type SquadMember } from "../lib/api";
 import { useSquadStore } from "../store/squadStore";
@@ -52,6 +52,7 @@ export function DashboardPage() {
   usePageTitle("Dashboard | SquadCode");
 
   const { getToken } = useAuth();
+  const { user } = useUser();
   const api = useMemo(() => createApiClient(() => getToken()), [getToken]);
 
   const selectedSquadId = useSquadStore((s) => s.selectedSquadId);
@@ -95,7 +96,8 @@ export function DashboardPage() {
     return () => {
       alive = false;
     };
-  }, [api, selectedSquadId, setSelectedSquadId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [api, setSelectedSquadId]);
 
   useEffect(() => {
     let alive = true;
@@ -134,7 +136,7 @@ export function DashboardPage() {
         .get(`/feed/${selectedSquadId}`)
         .then((res) => setFeed((res.data?.items ?? []) as FeedItem[]))
         .catch(() => {});
-    }, 60_000);
+    }, 30_000);
     return () => clearInterval(timer);
   }, [api, selectedSquadId]);
 
@@ -281,7 +283,16 @@ export function DashboardPage() {
         <div className="text-sm font-bold">Members</div>
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
           {dashboard?.members.map((m) => (
-            <MemberCard key={m.id} member={m} connections={dashboard.connections} caches={dashboard.caches} />
+            <MemberCard 
+              key={m.id} 
+              member={m} 
+              connections={dashboard.connections} 
+              caches={dashboard.caches} 
+              isMe={m.user.email === user?.primaryEmailAddress?.emailAddress}
+              squadId={dashboard?.squad?.id}
+              api={api}
+              onNicknameUpdated={() => triggerRefresh()}
+            />
           )) ?? null}
         </div>
       </div>
@@ -295,6 +306,10 @@ function MemberCard(props: {
   member: SquadMember;
   connections: Connection[];
   caches: Cache[];
+  isMe?: boolean;
+  squadId?: string;
+  api?: any;
+  onNicknameUpdated?: () => void;
 }) {
   const conns = props.connections.filter((c) => c.userId === props.member.user.id);
   const caches = props.caches.filter((c) => c.userId === props.member.user.id);
@@ -307,21 +322,75 @@ function MemberCard(props: {
   const lcConn = conns.find((c) => c.platform === "leetcode");
   const ghConn = conns.find((c) => c.platform === "github");
 
+  const [editingNickname, setEditingNickname] = useState(false);
+  const [nicknameInput, setNicknameInput] = useState(props.member.nickname ?? "");
+  const [savingNickname, setSavingNickname] = useState(false);
+
+  async function handleSaveNickname() {
+    if (!props.api || !props.squadId) return;
+    setSavingNickname(true);
+    try {
+      await props.api.patch(`/squads/${props.squadId}/members/me/nickname`, {
+        nickname: nicknameInput.trim() || null
+      });
+      setEditingNickname(false);
+      props.onNicknameUpdated?.();
+    } catch (e) {
+      console.error(e);
+      alert("Failed to update nickname");
+    } finally {
+      setSavingNickname(false);
+    }
+  }
+
   return (
     <div className="rounded-2xl border-2 border-border bg-surface-2 p-4">
       <div className="flex items-center justify-between">
-        <div className="font-bold">{props.member.user.username}</div>
+        {editingNickname ? (
+          <div className="flex items-center gap-2">
+            <input 
+              type="text" 
+              value={nicknameInput}
+              onChange={(e) => setNicknameInput(e.target.value)}
+              className="rounded-lg border-2 border-ink-900 px-2 py-1 text-sm outline-none w-32"
+              placeholder={props.member.user.username}
+              autoFocus
+            />
+            <button onClick={handleSaveNickname} disabled={savingNickname} className="rounded-lg bg-brand-500 px-2 py-1 text-xs text-white shadow-pop font-bold">Save</button>
+            <button onClick={() => setEditingNickname(false)} disabled={savingNickname} className="text-xs text-ink-600 underline">Cancel</button>
+          </div>
+        ) : (
+          <div className="font-bold flex items-center gap-2">
+            {props.member.nickname ?? props.member.user.username}
+            {props.isMe && (
+               <button onClick={() => {
+                 setNicknameInput(props.member.nickname ?? "");
+                 setEditingNickname(true);
+               }} className="text-xs text-brand-500 underline opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                 edit
+               </button>
+            )}
+          </div>
+        )}
         <span className="rounded-full border border-border-strong bg-surface-2 px-2 py-0.5 text-xs text-ink-600">
           {props.member.role}
         </span>
       </div>
-      <div className="mt-1 text-sm text-ink-400">{props.member.user.email}</div>
+      <div className="mt-1 text-sm text-ink-400 group flex items-center gap-2">
+        {props.member.user.email}
+        {props.member.nickname && !editingNickname && <span className="text-xs text-ink-400">(@{props.member.user.username})</span>}
+      </div>
 
-      <div className="mt-4 grid grid-cols-3 gap-2 text-xs">
+      <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
         <Stat
           label="CF rating"
           value={typeof cf?.rating === "number" ? String(cf.rating) : cfConn?.verified ? "..." : "-"}
           sub={cfConn?.verified ? cfConn.username : "not connected"}
+        />
+        <Stat
+          label="LC rating"
+          value={typeof lc?.contestRating === "number" ? String(lc.contestRating) : lcConn?.verified ? "..." : "-"}
+          sub={lcConn?.verified ? lcConn.username : "not connected"}
         />
         <Stat
           label="LC solved"

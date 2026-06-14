@@ -16,6 +16,9 @@ import {
   LegacySquadThreadsRedirect,
   LegacySquadThreadDetailRedirect
 } from "./pages/LegacySquadRoutes";
+import { PlaygroundPage } from "./pages/PlaygroundPage";
+import { CalendarPage } from "./pages/CalendarPage";
+import { LeaderboardPage } from "./pages/LeaderboardPage";
 
 export default function App() {
   const missingClerkKey = !import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -67,6 +70,9 @@ export default function App() {
         <Route path="/threads/:thread_id" element={<ThreadDetailPage />} />
         <Route path="/sheets" element={<SheetsListPage />} />
         <Route path="/sheets/:sheet_id" element={<SheetDetailPage />} />
+        <Route path="/playground" element={<PlaygroundPage />} />
+        <Route path="/calendar" element={<CalendarPage />} />
+        <Route path="/leaderboard" element={<LeaderboardPage />} />
 
         {/* Legacy URLs (keep old links working) */}
         <Route path="/squad/:id" element={<LegacySquadDashboardRedirect />} />

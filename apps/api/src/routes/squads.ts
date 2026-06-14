@@ -297,3 +297,45 @@ squadsRouter.post(
     res.json({ squadId: squad.id });
   })
 );
+
+squadsRouter.patch(
+  "/:id/members/me/nickname",
+  requireClerkAuth,
+  asyncRoute(async (req, res) => {
+    const squadId = String(req.params.id);
+    const { nickname } = req.body;
+    
+    if (typeof nickname !== "string" && nickname !== null) {
+      res.status(400).json({ error: "Nickname must be a string or null" });
+      return;
+    }
+
+    if (nickname && nickname.length > 32) {
+      res.status(400).json({ error: "Nickname must be 32 characters or less" });
+      return;
+    }
+
+    const clerkUserId = getClerkUserId(req);
+    const me = await prisma.user.findUnique({ where: { clerkId: clerkUserId } });
+    if (!me) {
+      res.status(400).json({ error: "User not synced yet. Call /api/auth/sync first." });
+      return;
+    }
+
+    const membership = await prisma.squadMember.findUnique({
+      where: { squadId_userId: { squadId, userId: me.id } }
+    });
+
+    if (!membership) {
+      res.status(404).json({ error: "Squad not found or you are not a member" });
+      return;
+    }
+
+    const updated = await prisma.squadMember.update({
+      where: { id: membership.id },
+      data: { nickname: nickname || null }
+    });
+
+    res.json({ member: updated });
+  })
+);

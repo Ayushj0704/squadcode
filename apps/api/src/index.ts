@@ -25,6 +25,8 @@ if (process.env.CLERK_SECRET_KEY) {
   app.use(clerkMiddleware());
 }
 
+import { executeRouter } from "./routes/execute.js";
+
 app.use("/api/health", healthRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/squads", squadsRouter);
@@ -34,6 +36,7 @@ app.use("/api/platformData", platformDataRouter);
 app.use("/api/threads", threadsRouter);
 app.use("/api/sheets", sheetsRouter);
 app.use("/api/feed", feedRouter);
+app.use("/api/execute", executeRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

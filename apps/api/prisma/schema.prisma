@@ -95,6 +95,7 @@ model SquadMember {
   squadId  String          @map("squad_id")
   userId   String          @map("user_id")
   role     SquadMemberRole @default(member)
+  nickname String?
   joinedAt DateTime        @default(now()) @map("joined_at")
 
   squad Squad @relation(fields: [squadId], references: [id])

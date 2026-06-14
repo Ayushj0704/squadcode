@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { apiBaseUrl } from "./api";
+import { useNotificationStore } from "../store/notificationStore";
 
 type ThreadPostEvent = {
   type: "thread-post";
@@ -50,6 +51,7 @@ export function useThreadPostNotifications(
           for (const chunk of chunks) {
             const event = parseServerSentEvent(chunk);
             if (event?.type === "thread-post") {
+              useNotificationStore.getState().increment();
               playNotificationSound();
             }
           }

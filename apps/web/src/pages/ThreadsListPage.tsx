@@ -4,6 +4,7 @@ import { useAuth } from "@clerk/clerk-react";
 import axios from "axios";
 import { createApiClient } from "../lib/api";
 import { useSquadStore } from "../store/squadStore";
+import { useNotificationStore } from "../store/notificationStore";
 import { usePageTitle } from "../lib/usePageTitle";
 
 type Thread = {
@@ -21,6 +22,7 @@ export function ThreadsListPage() {
   const { getToken } = useAuth();
   const api = useMemo(() => createApiClient(() => getToken()), [getToken]);
   const selectedSquadId = useSquadStore((s) => s.selectedSquadId);
+  const lastThreadEvent = useNotificationStore((s) => s.lastThreadEvent);
 
   const [threads, setThreads] = useState<Thread[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +42,7 @@ export function ThreadsListPage() {
   useEffect(() => {
     void load().catch((e) => setError(errorMessage(e)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedSquadId]);
+  }, [selectedSquadId, lastThreadEvent]);
 
   async function createThread() {
     if (!selectedSquadId) return;

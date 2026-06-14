@@ -33,6 +33,7 @@ export type LeetCodeCache = {
   ranking?: number;
   contributionPoints?: number;
   streak?: number;
+  contestRating?: number;
 };
 
 export type GitHubCache = {

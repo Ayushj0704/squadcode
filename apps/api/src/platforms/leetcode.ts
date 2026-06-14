@@ -48,6 +48,21 @@ export async function fetchLeetCodeData(username: string): Promise<LeetCodeCache
 
   const profile = alfaSchema.parse(profileRes.data);
   const solved = alfaSolvedSchema.parse(solvedRes.data);
+  
+  let contestRating: number | undefined;
+  try {
+    const contestRes = await axios.get(`${ALFA_BASE}/${encodeURIComponent(username)}/contest`, {
+      headers: { Accept: "application/json" },
+      timeout: 10_000,
+      validateStatus: () => true
+    });
+    if (contestRes.status >= 200 && contestRes.status < 300 && contestRes.data?.contestParticipation?.length > 0) {
+      const participations = contestRes.data.contestParticipation;
+      contestRating = participations[participations.length - 1].rating;
+    }
+  } catch (e) {
+    console.warn(`Failed to fetch LeetCode contest data for ${username}`);
+  }
 
   return {
     username: profile.username ?? username,
@@ -56,7 +71,8 @@ export async function fetchLeetCodeData(username: string): Promise<LeetCodeCache
     mediumSolved: solved.mediumSolved ?? 0,
     hardSolved: solved.hardSolved ?? 0,
     ranking: profile.ranking,
-    streak: profile.streak
+    streak: profile.streak,
+    contestRating: contestRating ? Math.round(contestRating) : undefined
   };
 }
 
