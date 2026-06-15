@@ -430,13 +430,15 @@ function ActivityFeedSection(props: { items: FeedItem[]; members: SquadMember[] 
 
   useEffect(() => {
     setNow(Date.now());
-    const timer = setInterval(() => setNow(Date.now()), 60_000);
-    return () => clearInterval(timer);
+    const interval = setInterval(() => setNow(Date.now()), 60000);
+    return () => clearInterval(interval);
   }, []);
 
-  const last24hCutoff = now ? now - 24 * 60 * 60 * 1000 : 0;
-  const hasRecent =
-    now > 0 ? items.some((i) => new Date(i.createdAt).getTime() >= last24hCutoff) : false;
+  const last10hCutoff = now ? now - 10 * 60 * 60 * 1000 : 0;
+  
+  // Filter items to only show the last 10 hours, and take up to 20 to prevent clutter
+  const recentItems = items.filter((i) => new Date(i.createdAt).getTime() >= last10hCutoff).slice(0, 20);
+  const hasRecent = recentItems.length > 0;
 
   return (
     <div className="rounded-2xl border-2 border-border bg-surface-0 shadow-card p-6">
@@ -457,8 +459,8 @@ function ActivityFeedSection(props: { items: FeedItem[]; members: SquadMember[] 
           </div>
         ) : null}
 
-        {items.map((item) => {
-          const member = members.find((m) => m.userId === item.user.id);
+        {recentItems.map((item) => {
+          const member = members.find((m) => m.user.id === item.user.id);
           const displayName = member?.nickname ?? item.user.username;
           return (
             <div key={item.id} className="flex items-center gap-3 rounded-xl border-2 border-border bg-surface-2 p-4">

@@ -38,8 +38,22 @@ app.use("/api/sheets", sheetsRouter);
 app.use("/api/feed", feedRouter);
 app.use("/api/execute", executeRouter);
 
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Serve frontend static files
+app.use(express.static(path.join(__dirname, "../../../web/dist")));
+
 app.use(notFoundHandler);
 app.use(errorHandler);
+
+// Catch-all for SPA routing
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../../../web/dist/index.html"));
+});
 
 app.listen(env.PORT, () => {
   console.log(`api listening on http://localhost:${env.PORT}`);
