@@ -49,7 +49,7 @@ executeRouter.post("/", requireClerkAuth, asyncRoute(async (req, res) => {
       }),
     });
 
-    const data = await response.json();
+    const data = (await response.json()) as { error?: string; message?: string; output?: string };
 
     if (!response.ok || data.error) {
       res.json({ stdout: "", stderr: data.error || data.message || "JDoodle Execution error", code: 1 });
