@@ -297,7 +297,7 @@ export function DashboardPage() {
         </div>
       </div>
 
-      <ActivityFeedSection items={feed} />
+      <ActivityFeedSection items={feed} members={dashboard?.members ?? []} />
     </div>
   );
 }
@@ -423,8 +423,9 @@ function Stat(props: { label: string; value: string; sub: string }) {
   );
 }
 
-function ActivityFeedSection(props: { items: FeedItem[] }) {
+function ActivityFeedSection(props: { items: FeedItem[]; members: SquadMember[] }) {
   const items = props.items ?? [];
+  const members = props.members ?? [];
   const [now, setNow] = useState(0);
 
   useEffect(() => {
@@ -456,22 +457,26 @@ function ActivityFeedSection(props: { items: FeedItem[] }) {
           </div>
         ) : null}
 
-        {items.map((item) => (
-          <div key={item.id} className="flex items-center gap-3 rounded-xl border-2 border-border bg-surface-2 p-4">
-            <div className="h-9 w-9 rounded-full bg-brand-100 border-2 border-ink-900 flex items-center justify-center text-sm font-bold text-brand-600">
-              {(item.user.username?.[0] ?? "?").toUpperCase()}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-sm text-ink-800 truncate">
-                <span className="font-bold">{item.user.username}</span>{" "}
-                {item.description}
+        {items.map((item) => {
+          const member = members.find((m) => m.userId === item.user.id);
+          const displayName = member?.nickname ?? item.user.username;
+          return (
+            <div key={item.id} className="flex items-center gap-3 rounded-xl border-2 border-border bg-surface-2 p-4">
+              <div className="h-9 w-9 rounded-full bg-brand-100 border-2 border-ink-900 flex items-center justify-center text-sm font-bold text-brand-600">
+                {(displayName?.[0] ?? "?").toUpperCase()}
               </div>
-              <div className="mt-0.5 text-xs text-ink-400">
-                {timeAgo(item.createdAt)}
+              <div className="min-w-0 flex-1">
+                <div className="text-sm text-ink-800 truncate">
+                  <span className="font-bold">{displayName}</span>{" "}
+                  {item.description}
+                </div>
+                <div className="mt-0.5 text-xs text-ink-400">
+                  {timeAgo(item.createdAt)}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

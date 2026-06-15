@@ -47,7 +47,7 @@ type FeedItem = {
 /*  Scoring helpers                                                    */
 /* ------------------------------------------------------------------ */
 
-type SortKey = "score" | "cf" | "lc" | "gh" | "activity";
+type SortKey = "score" | "cf" | "lc" | "lc_rating" | "gh" | "activity";
 
 interface MemberScore {
   userId: string;
@@ -56,6 +56,7 @@ interface MemberScore {
   role: "admin" | "member";
   cfRating: number;
   lcSolved: number;
+  lcRating: number;
   ghContribs: number;
   activityCount: number;
   score: number;
@@ -69,8 +70,8 @@ function asObject(value: unknown): Record<string, unknown> | null {
   return value as Record<string, unknown>;
 }
 
-function computeScore(cf: number, lc: number, gh: number, act: number): number {
-  return Math.round(cf * 0.3 + lc * 10 * 0.3 + gh * 0.2 + act * 50 * 0.2);
+function computeScore(cf: number, lc: number, lcRating: number, gh: number, act: number): number {
+  return Math.round(cf * 0.3 + lc * 10 * 0.3 + lcRating * 0.3 + gh * 0.2 + act * 50 * 0.2);
 }
 
 function buildScores(
@@ -95,20 +96,22 @@ function buildScores(
 
     const cfRating = typeof cf?.rating === "number" ? cf.rating : 0;
     const lcSolved = typeof lc?.totalSolved === "number" ? lc.totalSolved : 0;
+    const lcRating = typeof lc?.contestRating === "number" ? lc.contestRating : 0;
     const ghContribs =
       typeof gh?.totalContributionsThisYear === "number" ? gh.totalContributionsThisYear : 0;
     const activityCount = activityCounts.get(uid) ?? 0;
 
     return {
       userId: uid,
-      username: m.user.username,
+      username: m.nickname ?? m.user.username,
       email: m.user.email,
       role: m.role,
       cfRating,
       lcSolved,
+      lcRating,
       ghContribs,
       activityCount,
-      score: computeScore(cfRating, lcSolved, ghContribs, activityCount),
+      score: computeScore(cfRating, lcSolved, lcRating, ghContribs, activityCount),
       cfUsername: userConns.find((c) => c.platform === "codeforces" && c.verified)?.username ?? null,
       lcUsername: userConns.find((c) => c.platform === "leetcode" && c.verified)?.username ?? null,
       ghUsername: userConns.find((c) => c.platform === "github" && c.verified)?.username ?? null,
@@ -124,6 +127,8 @@ function sortScores(scores: MemberScore[], key: SortKey): MemberScore[] {
         return b.cfRating - a.cfRating || b.score - a.score;
       case "lc":
         return b.lcSolved - a.lcSolved || b.score - a.score;
+      case "lc_rating":
+        return b.lcRating - a.lcRating || b.score - a.score;
       case "gh":
         return b.ghContribs - a.ghContribs || b.score - a.score;
       case "activity":
@@ -310,6 +315,7 @@ export function LeaderboardPage() {
               >
                 <option value="score">Composite Score</option>
                 <option value="cf">CF Rating</option>
+                <option value="lc_rating">LC Rating</option>
                 <option value="lc">LC Solved</option>
                 <option value="gh">GH Contributions</option>
                 <option value="activity">Activity Count</option>
@@ -369,10 +375,11 @@ export function LeaderboardPage() {
         <h2 className="font-display text-sm font-bold text-ink-800 mb-4">Full Rankings</h2>
 
         {/* Table header */}
-        <div className="hidden sm:grid grid-cols-[3rem_1fr_5.5rem_5.5rem_5.5rem_4rem_6rem] gap-2 px-4 pb-2 text-xs font-bold text-ink-400 uppercase tracking-wide border-b-2 border-border">
+        <div className="hidden sm:grid grid-cols-[3rem_1fr_4.5rem_4.5rem_4.5rem_4.5rem_4rem_6rem] gap-2 px-4 pb-2 text-xs font-bold text-ink-400 uppercase tracking-wide border-b-2 border-border">
           <div>#</div>
           <div>Member</div>
-          <div className="text-right">CF Rating</div>
+          <div className="text-right">CF Rate</div>
+          <div className="text-right">LC Rate</div>
           <div className="text-right">LC Solved</div>
           <div className="text-right">GH Contrib</div>
           <div className="text-right">Acts</div>
@@ -398,6 +405,8 @@ export function LeaderboardPage() {
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-ink-600">
           <span className="font-bold text-ink-800">Score formula:</span>
           <span>CF Rating × 0.3</span>
+          <span className="text-ink-200">+</span>
+          <span>LC Rating × 0.3</span>
           <span className="text-ink-200">+</span>
           <span>LC Solved × 10 × 0.3</span>
           <span className="text-ink-200">+</span>
@@ -519,13 +528,14 @@ function LeaderboardRow({
     score: "",
     cf: "cf",
     lc: "lc",
+    lc_rating: "lc_rating",
     gh: "gh",
     activity: "activity",
   };
   const hl = highlightCol[sortKey];
 
   return (
-    <div className="group grid grid-cols-1 sm:grid-cols-[3rem_1fr_5.5rem_5.5rem_5.5rem_4rem_6rem] gap-2 items-center px-4 py-3 transition-colors duration-200 hover:bg-brand-50/50">
+    <div className="group grid grid-cols-1 sm:grid-cols-[3rem_1fr_4.5rem_4.5rem_4.5rem_4.5rem_4rem_6rem] gap-2 items-center px-4 py-3 transition-colors duration-200 hover:bg-brand-50/50">
       {/* Rank */}
       <div className="flex items-center">
         <span
@@ -562,6 +572,14 @@ function LeaderboardRow({
         >
           <span className="sm:hidden text-xs text-ink-400 mr-1">CF:</span>
           {member.cfRating || "–"}
+        </div>
+        <div
+          className={`text-right text-sm tabular-nums ${
+            hl === "lc_rating" ? "font-bold text-mint-500" : "text-ink-800"
+          }`}
+        >
+          <span className="sm:hidden text-xs text-ink-400 mr-1">LCR:</span>
+          {member.lcRating || "–"}
         </div>
         <div
           className={`text-right text-sm tabular-nums ${

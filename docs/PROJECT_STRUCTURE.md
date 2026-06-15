@@ -22,26 +22,28 @@ cdeda/
         components/         Shared layout and UI components
           AppShell.tsx      Signed-in app shell and navigation
           ui/               Reusable Button/Card/Input/etc.
-        lib/                Frontend helpers such as API client/title hook
-        pages/              Route-level screens
-        store/              Zustand client state
-      public/               Browser-served static assets
+        lib/                Frontend helpers (API client, title hook, SSE notifications)
+        pages/              Route-level screens (Dashboard, Leaderboard, Calendar, Playground, Threads, Sheets)
+        store/              Zustand client state (Squad selection, notification counts)
+      public/               Browser-served static assets (e.g. logo.png)
 
     api/                    Backend application
       package.json          Backend scripts and dependencies
       prisma/
-        schema.prisma       Database schema
+        schema.prisma       Database schema (User, Squad, Thread, Feed, Caches, etc.)
         migrations/         Applied database migrations
       src/
         index.ts            Express server entry
         env.ts              Runtime config validation
         prisma.ts           Prisma client singleton
+        threadEvents.ts     SSE Event Emitter for real-time thread notifications
         auth/               Clerk auth and squad membership helpers
         http/               Express error/async helpers
         lib/                Backend utilities
         platforms/          Codeforces/LeetCode/GitHub integrations
-        routes/             HTTP API route modules
+        routes/             HTTP API route modules (auth, squads, threads, feed, platformData, execute)
         workers/            BullMQ queues and background jobs
+          tasks/            Specific background tasks (refreshSquad, activityFeed, tokenCleanup)
 ```
 
 ## Where To Edit

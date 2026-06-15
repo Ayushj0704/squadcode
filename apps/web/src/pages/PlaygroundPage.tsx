@@ -403,16 +403,7 @@ export function PlaygroundPage() {
       {/* ─── Footer info ─── */}
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-ink-400 px-1">
         <span>
-          Powered by{" "}
-          <a
-            href="https://github.com/engineer-man/piston"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline hover:text-brand-500 transition"
-          >
-            Piston
-          </a>{" "}
-          — a public code execution engine
+          Local Code Execution
         </span>
         <span className="font-mono">
           Tab = 4 spaces • {lineCount} line{lineCount !== 1 ? "s" : ""}
