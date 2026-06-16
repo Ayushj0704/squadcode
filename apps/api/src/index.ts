@@ -51,7 +51,7 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 // Catch-all for SPA routing
-app.get("*", (req, res) => {
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, "../../../web/dist/index.html"));
 });
 

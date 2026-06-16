@@ -6,9 +6,9 @@ import { createApiClient } from "../lib/api";
 /* ─── language config ─── */
 type Lang = "python" | "cpp";
 
-const LANG_META: Record<Lang, { label: string; version: string; pistonName: string }> = {
-  python: { label: "Python", version: "3.10.0", pistonName: "python" },
-  cpp: { label: "C++", version: "10.2.0", pistonName: "cpp" },
+const LANG_META: Record<Lang, { label: string; version: string }> = {
+  python: { label: "Python 3", version: "3.x" },
+  cpp: { label: "C++ 17", version: "17" },
 };
 
 const DEFAULT_CODE: Record<Lang, string> = {
@@ -56,6 +56,8 @@ export function PlaygroundPage() {
   const [running, setRunning] = useState(false);
   const [execTime, setExecTime] = useState<number | null>(null);
   const [exitCode, setExitCode] = useState<number | null>(null);
+  const [cpuTime, setCpuTime] = useState<string | null>(null);
+  const [memory, setMemory] = useState<string | null>(null);
 
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const lineNumbersRef = useRef<HTMLDivElement>(null);
@@ -76,6 +78,8 @@ export function PlaygroundPage() {
     setStderr("");
     setExecTime(null);
     setExitCode(null);
+    setCpuTime(null);
+    setMemory(null);
   }
 
   /* clear */
@@ -86,6 +90,8 @@ export function PlaygroundPage() {
     setStderr("");
     setExecTime(null);
     setExitCode(null);
+    setCpuTime(null);
+    setMemory(null);
   }
 
   /* run */
@@ -95,6 +101,8 @@ export function PlaygroundPage() {
     setStderr("");
     setExecTime(null);
     setExitCode(null);
+    setCpuTime(null);
+    setMemory(null);
 
     const start = performance.now();
 
@@ -112,6 +120,8 @@ export function PlaygroundPage() {
       setStdout(run?.stdout ?? "");
       setStderr(run?.stderr ?? "");
       setExitCode(run?.code ?? run?.exitCode ?? null);
+      setCpuTime(run?.cpuTime ?? null);
+      setMemory(run?.memory ?? null);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Network error";
       setStderr(msg);
@@ -295,7 +305,9 @@ export function PlaygroundPage() {
               <span className="h-3 w-3 rounded-full bg-mint-400 border border-mint-500" />
             </div>
             <span className="text-xs font-mono text-ink-400">
-              {LANG_META[lang].label} {LANG_META[lang].version}
+              {LANG_META[lang].label}
+              {cpuTime ? ` • CPU: ${cpuTime}s` : ""}
+              {memory ? ` • Mem: ${memory}KB` : ""}
             </span>
           </div>
 
@@ -403,7 +415,7 @@ export function PlaygroundPage() {
       {/* ─── Footer info ─── */}
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-ink-400 px-1">
         <span>
-          Local Code Execution
+          Powered by JDoodle
         </span>
         <span className="font-mono">
           Tab = 4 spaces • {lineCount} line{lineCount !== 1 ? "s" : ""}

@@ -8,17 +8,28 @@ const QUEUE_SQUAD_REFRESH = "squad-refresh";
 const QUEUE_TOKEN_CLEANUP = "token-cleanup";
 const QUEUE_ACTIVITY_FEED = "activity-feed";
 
-let connection: { url: string; maxRetriesPerRequest: null } | null = null;
+import type { ConnectionOptions } from "bullmq";
+
+let connection: ConnectionOptions | null = null;
 let squadRefreshQueue: Queue | null = null;
 let tokenCleanupQueue: Queue | null = null;
 let activityFeedQueue: Queue | null = null;
 
-function getConnectionOptions() {
+function getConnectionOptions(): ConnectionOptions | null {
   if (!env.REDIS_URL) return null;
   if (connection) return connection;
+
+  // Parse the Redis URL into ioredis-compatible connection options.
+  // ioredis does NOT accept a { url } object — it needs host/port/password.
+  const parsed = new URL(env.REDIS_URL);
   connection = {
-    url: env.REDIS_URL,
-    maxRetriesPerRequest: null
+    host: parsed.hostname,
+    port: Number(parsed.port) || 6379,
+    password: parsed.password ? decodeURIComponent(parsed.password) : undefined,
+    username: parsed.username && parsed.username !== "default" ? parsed.username : undefined,
+    maxRetriesPerRequest: null,
+    // Upstash requires TLS — detect via rediss:// protocol
+    ...(parsed.protocol === "rediss:" ? { tls: {} } : {})
   };
   return connection;
 }
