@@ -38,13 +38,14 @@ const ALLOWED_ORIGINS = [
   'http://127.0.0.1:5173',
   'http://127.0.0.1:5174',
   'http://localhost:8080',
+  'https://squadcode.netlify.app',
   process.env.FRONTEND_URL,
 ].filter(Boolean) as string[];
 
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (mobile apps, curl, etc)
-    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+    if (!origin || ALLOWED_ORIGINS.includes(origin) || origin.endsWith('.netlify.app')) {
       callback(null, true);
     } else {
       callback(null, false);
