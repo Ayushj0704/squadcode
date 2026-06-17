@@ -43,7 +43,14 @@ export function AppShell() {
               to="/onboarding"
               className="group flex items-center gap-3 text-sm font-bold tracking-wide"
             >
-              <img src="/logo.png" alt="SquadCode Logo" className="h-10 w-10 rounded-2xl object-cover border-2 border-ink-900 shadow-pop transition group-hover:-translate-y-0.5 group-hover:shadow-[0_6px_0_0_#cfc8f0]" />
+              <img src="/logo.png" alt="SquadCode Logo" className="
+  h-10 w-10
+  rounded-xl
+  object-cover
+  
+  transition-transform duration-700 ease-in-out
+  group-hover:rotate-[360deg]
+"></img>
               <span className="hidden sm:block">
                 <span className="font-display block text-base leading-none text-ink-900">
                   SquadCode
