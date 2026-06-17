@@ -194,6 +194,8 @@ connectionsRouter.get(
         username: true,
         verified: true,
         connectedAt: true,
+        verificationToken: true,
+        tokenExpiresAt: true,
       },
       orderBy: { connectedAt: "desc" }
     });
