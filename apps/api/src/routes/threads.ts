@@ -137,7 +137,7 @@ threadsRouter.get(
 
     const posts = await prisma.threadPost.findMany({
       where: { threadId },
-      include: { user: true },
+      include: { user: { select: { id: true, username: true } } },
       orderBy: { createdAt: "asc" }
     });
     res.json({ thread, posts });
@@ -178,7 +178,7 @@ threadsRouter.post(
         userId: me.id,
         content
       },
-      include: { user: true }
+      include: { user: { select: { id: true, username: true } } }
     });
 
     publishThreadPostEvent({

@@ -122,8 +122,12 @@ export function PlaygroundPage() {
       setExitCode(run?.code ?? run?.exitCode ?? null);
       setCpuTime(run?.cpuTime ?? null);
       setMemory(run?.memory ?? null);
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Network error";
+    } catch (e: any) {
+      const msg =
+        e?.response?.data?.error ??
+        e?.response?.data?.stderr ??
+        e?.message ??
+        "Network error";
       setStderr(msg);
     } finally {
       setRunning(false);
@@ -159,14 +163,14 @@ export function PlaygroundPage() {
       const commentToken = isCpp ? "// " : "# ";
       
       // If we have a selection spanning multiple lines
-      if (selected.includes("\\n") || selected.length > 0) {
-         let lineStart = before.lastIndexOf("\\n") + 1;
-         if (lineStart === 0 && before.length > 0 && before[0] !== '\\n') {
+      if (selected.includes("\n") || selected.length > 0) {
+         let lineStart = before.lastIndexOf("\n") + 1;
+         if (lineStart === 0 && before.length > 0 && before[0] !== '\n') {
            lineStart = 0;
          }
          
          const fullSelectedText = code.substring(lineStart, end);
-         const lines = fullSelectedText.split("\\n");
+         const lines = fullSelectedText.split("\n");
          
          const allCommented = lines.every(l => l.trim() === "" || l.trimStart().startsWith(commentToken.trim()));
          
@@ -179,16 +183,16 @@ export function PlaygroundPage() {
            }
          });
          
-         const newCode = code.substring(0, lineStart) + newLines.join("\\n") + after;
+         const newCode = code.substring(0, lineStart) + newLines.join("\n") + after;
          setCode(newCode);
          requestAnimationFrame(() => {
             ta.selectionStart = lineStart;
-            ta.selectionEnd = lineStart + newLines.join("\\n").length;
+            ta.selectionEnd = lineStart + newLines.join("\n").length;
          });
       } else {
          // Single line
-         const lineStart = before.lastIndexOf("\\n") + 1;
-         const lineEndStr = after.indexOf("\\n");
+         const lineStart = before.lastIndexOf("\n") + 1;
+         const lineEndStr = after.indexOf("\n");
          const lineEnd = lineEndStr === -1 ? code.length : end + lineEndStr;
          
          const line = code.substring(lineStart, lineEnd);
@@ -266,7 +270,7 @@ export function PlaygroundPage() {
             <button
               onClick={handleClear}
               disabled={running}
-              className="rounded-xl border-2 border-ink-900 bg-white px-4 py-2 text-sm font-bold text-ink-800 shadow-pop-sm transition active:translate-y-0.5 active:shadow-none hover:bg-ink-100 disabled:opacity-50"
+              className="rounded-xl border-2 border-ink-900 bg-surface-0 px-4 py-2 text-sm font-bold text-ink-800 shadow-pop-sm transition active:translate-y-0.5 active:shadow-none hover:bg-ink-100 disabled:opacity-50"
             >
               Clear
             </button>
@@ -415,7 +419,7 @@ export function PlaygroundPage() {
       {/* ─── Footer info ─── */}
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-ink-400 px-1">
         <span>
-          Powered by JDoodle
+          Powered by Judge0
         </span>
         <span className="font-mono">
           Tab = 4 spaces • {lineCount} line{lineCount !== 1 ? "s" : ""}

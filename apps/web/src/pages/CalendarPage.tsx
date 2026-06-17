@@ -302,7 +302,7 @@ export function CalendarPage() {
             <button
               onClick={() => void loadContests()}
               disabled={loading}
-              className="rounded-xl border-2 border-ink-900 bg-white px-3 py-1.5 text-xs font-bold text-ink-800 shadow-pop-sm transition active:translate-y-0.5 active:shadow-none hover:bg-ink-100 disabled:opacity-50"
+              className="rounded-xl border-2 border-ink-900 bg-surface-0 px-3 py-1.5 text-xs font-bold text-ink-800 shadow-pop-sm transition active:translate-y-0.5 active:shadow-none hover:bg-ink-100 disabled:opacity-50"
             >
               {loading ? (
                 <span className="flex items-center gap-1">
@@ -333,7 +333,7 @@ export function CalendarPage() {
           <div className="flex items-center justify-between">
             <button
               onClick={prevMonth}
-              className="rounded-xl border-2 border-ink-900 bg-white px-3 py-1.5 text-sm font-bold text-ink-800 shadow-pop-sm transition active:translate-y-0.5 active:shadow-none hover:bg-ink-100"
+              className="rounded-xl border-2 border-ink-900 bg-surface-0 px-3 py-1.5 text-sm font-bold text-ink-800 shadow-pop-sm transition active:translate-y-0.5 active:shadow-none hover:bg-ink-100"
               aria-label="Previous month"
             >
               ‹
@@ -353,7 +353,7 @@ export function CalendarPage() {
             </div>
             <button
               onClick={nextMonth}
-              className="rounded-xl border-2 border-ink-900 bg-white px-3 py-1.5 text-sm font-bold text-ink-800 shadow-pop-sm transition active:translate-y-0.5 active:shadow-none hover:bg-ink-100"
+              className="rounded-xl border-2 border-ink-900 bg-surface-0 px-3 py-1.5 text-sm font-bold text-ink-800 shadow-pop-sm transition active:translate-y-0.5 active:shadow-none hover:bg-ink-100"
               aria-label="Next month"
             >
               ›

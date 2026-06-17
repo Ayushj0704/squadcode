@@ -36,23 +36,23 @@ export default {
           500: "#ff6347"
         },
         ink: {
-          50: "#fbfaff",
-          100: "#f3f1fb",
-          200: "#e7e3f7",
-          400: "#9d97c4",
-          600: "#5e5887",
-          800: "#2b2750",
-          900: "#191534"
+          50: "var(--ink-50)",
+          100: "var(--ink-100)",
+          200: "var(--ink-200)",
+          400: "var(--ink-400)",
+          600: "var(--ink-600)",
+          800: "var(--ink-800)",
+          900: "var(--ink-900)"
         },
         surface: {
-          0: "#ffffff",
-          1: "#fffdf8",
-          2: "#f6f4fe"
+          0: "var(--surface-0)",
+          1: "var(--surface-1)",
+          2: "var(--surface-2)"
         },
         border: {
-          DEFAULT: "#e7e3f7",
-          subtle: "#efedf9",
-          strong: "#cfc8f0"
+          DEFAULT: "var(--border-default)",
+          subtle: "var(--border-subtle)",
+          strong: "var(--border-strong)"
         }
       },
       boxShadow: {

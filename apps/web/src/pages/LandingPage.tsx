@@ -15,7 +15,7 @@ export function LandingPage() {
           </div>
         </div>
         <SignInButton mode="modal">
-          <button className="rounded-xl border-2 border-ink-900 bg-white px-4 py-2 text-sm font-bold text-ink-800 shadow-pop transition active:translate-y-1 active:shadow-none hover:bg-ink-100">
+          <button className="rounded-xl border-2 border-ink-900 bg-surface-0 px-4 py-2 text-sm font-bold text-ink-800 shadow-pop transition active:translate-y-1 active:shadow-none hover:bg-ink-100">
             Sign in
           </button>
         </SignInButton>
@@ -45,7 +45,7 @@ export function LandingPage() {
               </button>
             </SignUpButton>
             <SignInButton mode="modal">
-              <button className="rounded-xl border-2 border-ink-900 bg-white px-5 py-3 text-sm font-bold text-ink-800 shadow-pop transition active:translate-y-1 active:shadow-none hover:bg-ink-100">
+              <button className="rounded-xl border-2 border-ink-900 bg-surface-0 px-5 py-3 text-sm font-bold text-ink-800 shadow-pop transition active:translate-y-1 active:shadow-none hover:bg-ink-100">
                 Open dashboard
               </button>
             </SignInButton>
@@ -73,7 +73,7 @@ export function LandingPage() {
         <section className="relative">
           <div className="absolute -right-6 -top-6 h-20 w-20 rounded-2xl border-2 border-ink-900 bg-sun-400 shadow-pop rotate-12" />
           <div className="absolute -left-6 bottom-12 h-16 w-16 rounded-full border-2 border-ink-900 bg-coral-300 shadow-pop" />
-          <div className="relative overflow-hidden rounded-3xl border-2 border-ink-900 bg-white p-5 shadow-[0_8px_0_0_#cfc8f0]">
+          <div className="relative overflow-hidden rounded-3xl border-2 border-ink-900 bg-surface-0 p-5 shadow-[0_8px_0_0_#cfc8f0]">
             <div className="flex items-center justify-between border-b-2 border-border pb-4">
               <div>
                 <div className="font-display text-sm font-bold text-ink-900">Apex Coders</div>

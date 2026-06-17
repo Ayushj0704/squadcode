@@ -95,7 +95,7 @@ export function ConnectionsPage() {
         </div>
         <button
           onClick={loadStatus}
-          className="rounded-xl border-2 border-ink-900 bg-white px-3 py-2 text-sm font-bold text-ink-800 shadow-pop-sm transition active:translate-y-0.5 active:shadow-none hover:bg-ink-100"
+          className="rounded-xl border-2 border-ink-900 bg-surface-0 px-3 py-2 text-sm font-bold text-ink-800 shadow-pop-sm transition active:translate-y-0.5 active:shadow-none hover:bg-ink-100"
         >
           Refresh
         </button>
@@ -213,7 +213,7 @@ function ConnectionCard(props: {
         <input
           value={props.value}
           onChange={(e) => props.setValue(e.target.value)}
-          className="sm:col-span-2 w-full rounded-xl border-2 border-ink-900 bg-white px-3 py-2 text-ink-800 outline-none transition focus:ring-2 focus:ring-brand-500/40"
+          className="sm:col-span-2 w-full rounded-xl border-2 border-ink-900 bg-surface-0 px-3 py-2 text-ink-800 outline-none transition focus:ring-2 focus:ring-brand-500/40"
           placeholder={`${props.title} username`}
         />
         <button
@@ -241,7 +241,7 @@ function ConnectionCard(props: {
           {props.onVerify ? (
             <button
               onClick={props.onVerify}
-              className="mt-3 rounded-xl border-2 border-ink-900 bg-white px-3 py-2 text-sm font-bold text-ink-800 shadow-pop-sm transition active:translate-y-0.5 active:shadow-none hover:bg-ink-100"
+              className="mt-3 rounded-xl border-2 border-ink-900 bg-surface-0 px-3 py-2 text-sm font-bold text-ink-800 shadow-pop-sm transition active:translate-y-0.5 active:shadow-none hover:bg-ink-100"
             >
               Verify
             </button>

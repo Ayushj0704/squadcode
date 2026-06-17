@@ -188,6 +188,13 @@ connectionsRouter.get(
 
     const connections = await prisma.platformConnection.findMany({
       where: { userId: me.id },
+      select: {
+        id: true,
+        platform: true,
+        username: true,
+        verified: true,
+        connectedAt: true,
+      },
       orderBy: { connectedAt: "desc" }
     });
 

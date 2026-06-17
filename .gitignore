@@ -1,10 +1,16 @@
 node_modules
-dist
-build
+dist/
+build/
 .DS_Store
 .env
 .env.*
 !.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
 
 # Logs
 .codex-logs/

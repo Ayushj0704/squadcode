@@ -311,7 +311,7 @@ export function LeaderboardPage() {
                 id="lb-sort"
                 value={sortKey}
                 onChange={(e) => setSortKey(e.target.value as SortKey)}
-                className="rounded-xl border-2 border-ink-900 bg-white px-3 py-2 text-sm text-ink-800 outline-none transition focus:ring-2 focus:ring-brand-500/40"
+                className="rounded-xl border-2 border-ink-900 bg-surface-0 px-3 py-2 text-sm text-ink-800 outline-none transition focus:ring-2 focus:ring-brand-500/40"
               >
                 <option value="score">Composite Score</option>
                 <option value="cf">CF Rating</option>

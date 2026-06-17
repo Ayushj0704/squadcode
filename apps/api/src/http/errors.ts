@@ -13,7 +13,7 @@ export function errorHandler(
   _next: NextFunction
 ) {
   if (err instanceof ZodError) {
-    res.status(400).json({ error: "Validation Error", details: err.issues });
+    res.status(400).json({ error: "Validation Error", details: process.env.NODE_ENV === 'development' ? err.issues : undefined });
     return;
   }
 

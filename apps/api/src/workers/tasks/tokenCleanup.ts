@@ -1,10 +1,14 @@
 import { prisma } from "../../prisma.js";
 
 export async function cleanupExpiredTokens() {
-  await prisma.platformConnection.deleteMany({
+  await prisma.platformConnection.updateMany({
     where: {
-      verified: false,
-      tokenExpiresAt: { not: null, lt: new Date() }
+      tokenExpiresAt: { lt: new Date() },
+      verificationToken: { not: null }
+    },
+    data: {
+      verificationToken: null,
+      tokenExpiresAt: null,
     }
   });
 }

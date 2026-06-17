@@ -17,7 +17,7 @@ export function Button(
     variant === "primary"
       ? "bg-brand-500 text-white border-2 border-ink-900 shadow-pop hover:bg-brand-400"
       : variant === "secondary"
-        ? "border-2 border-ink-900 bg-white text-ink-800 shadow-pop hover:bg-ink-100"
+        ? "border-2 border-ink-900 bg-surface-0 text-ink-800 shadow-pop hover:bg-ink-100"
         : variant === "sun"
           ? "bg-sun-400 text-ink-900 border-2 border-ink-900 shadow-pop hover:bg-sun-300"
           : variant === "danger"

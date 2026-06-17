@@ -87,7 +87,7 @@ export function ThreadDetailPage() {
           </div>
           <button
             onClick={() => void load().catch((e) => setError(errorMessage(e)))}
-            className="rounded-xl border-2 border-ink-900 bg-white px-3 py-2 text-sm font-bold text-ink-800 shadow-pop-sm transition active:translate-y-0.5 active:shadow-none hover:bg-ink-100"
+            className="rounded-xl border-2 border-ink-900 bg-surface-0 px-3 py-2 text-sm font-bold text-ink-800 shadow-pop-sm transition active:translate-y-0.5 active:shadow-none hover:bg-ink-100"
           >
             Refresh
           </button>
@@ -120,7 +120,7 @@ export function ThreadDetailPage() {
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          className="mt-3 w-full min-h-28 rounded-xl border-2 border-ink-900 bg-white px-3 py-2 text-ink-800 outline-none transition focus:ring-2 focus:ring-brand-500/40"
+          className="mt-3 w-full min-h-28 rounded-xl border-2 border-ink-900 bg-surface-0 px-3 py-2 text-ink-800 outline-none transition focus:ring-2 focus:ring-brand-500/40"
           placeholder="Write a reply..."
         />
         <button

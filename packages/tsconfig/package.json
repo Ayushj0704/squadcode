@@ -1,0 +1,5 @@
+{
+  "name": "@squadcode/tsconfig",
+  "private": true,
+  "files": ["tsconfig.base.json"]
+}

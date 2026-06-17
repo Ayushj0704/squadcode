@@ -6,13 +6,15 @@ Private-by-default squad dashboard for competitive programmers.
 
 - `apps/web`: React 18 + Vite + Tailwind frontend
 - `apps/api`: Express + Prisma + PostgreSQL + Redis/BullMQ backend
+- `packages/shared`: Shared types and constants
+- `packages/tsconfig`: Shared TypeScript configurations
 - `docs`: project notes, folder map, and maintenance docs
 
 For a detailed file map, see `docs/PROJECT_STRUCTURE.md`.
 
 ## Quickstart
 
-1. Create the required `.env` files for `apps/api` and `apps/web`
+1. Copy `.env.example` files to `.env` for `apps/api` and `apps/web`
 2. Install deps: `npm install`
 3. Start dev: `npm run dev`
 

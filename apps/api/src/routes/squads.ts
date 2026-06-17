@@ -6,10 +6,12 @@ import { requireClerkAuth, getClerkUserId } from "../auth/clerk.js";
 
 export const squadsRouter = Router();
 
+import { randomInt } from "node:crypto";
+
 function randomInviteCode() {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let out = "";
-  for (let i = 0; i < 8; i++) out += alphabet[Math.floor(Math.random() * alphabet.length)];
+  for (let i = 0; i < 8; i++) out += alphabet[randomInt(alphabet.length)];
   return out;
 }
 
@@ -117,7 +119,10 @@ squadsRouter.get(
     const squad = await prisma.squad.findUnique({
       where: { id: squadId },
       include: {
-        members: { include: { user: true }, orderBy: { joinedAt: "asc" } }
+        members: {
+          include: { user: { select: { id: true, username: true } } },
+          orderBy: { joinedAt: "asc" }
+        }
       }
     });
     if (!squad) {
@@ -168,7 +173,16 @@ squadsRouter.get(
       where: { userId: { in: userIds } }
     });
 
-    res.json({ squadId, squad, members, connections, caches });
+    const safeConnections = connections.map(c => ({
+      id: c.id,
+      userId: c.userId,
+      platform: c.platform,
+      username: c.username,
+      verified: c.verified,
+      connectedAt: c.connectedAt,
+    }));
+
+    res.json({ squadId, squad, members, connections: safeConnections, caches });
   })
 );
 
@@ -303,17 +317,11 @@ squadsRouter.patch(
   requireClerkAuth,
   asyncRoute(async (req, res) => {
     const squadId = String(req.params.id);
-    const { nickname } = req.body;
+    const nicknameSchema = z.object({
+      nickname: z.string().max(32).nullable(),
+    });
     
-    if (typeof nickname !== "string" && nickname !== null) {
-      res.status(400).json({ error: "Nickname must be a string or null" });
-      return;
-    }
-
-    if (nickname && nickname.length > 32) {
-      res.status(400).json({ error: "Nickname must be 32 characters or less" });
-      return;
-    }
+    const { nickname } = nicknameSchema.parse(req.body);
 
     const clerkUserId = getClerkUserId(req);
     const me = await prisma.user.findUnique({ where: { clerkId: clerkUserId } });

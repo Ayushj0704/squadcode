@@ -80,7 +80,7 @@ export function OnboardingPage() {
             <input
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="mt-1 w-full rounded-xl border-2 border-ink-900 bg-white px-3 py-2 text-ink-800 outline-none transition focus:ring-2 focus:ring-brand-500/40"
+              className="mt-1 w-full rounded-xl border-2 border-ink-900 bg-surface-0 px-3 py-2 text-ink-800 outline-none transition focus:ring-2 focus:ring-brand-500/40"
               placeholder="e.g. piyush_icpc"
             />
           </label>
@@ -107,7 +107,7 @@ export function OnboardingPage() {
           <input
             value={squadName}
             onChange={(e) => setSquadName(e.target.value)}
-            className="mt-4 w-full rounded-xl border-2 border-ink-900 bg-white px-3 py-2 text-ink-800 outline-none transition focus:ring-2 focus:ring-brand-500/40"
+            className="mt-4 w-full rounded-xl border-2 border-ink-900 bg-surface-0 px-3 py-2 text-ink-800 outline-none transition focus:ring-2 focus:ring-brand-500/40"
             placeholder="Squad name"
           />
           <button
@@ -127,7 +127,7 @@ export function OnboardingPage() {
           <input
             value={inviteCode}
             onChange={(e) => setInviteCode(e.target.value)}
-            className="mt-4 w-full rounded-xl border-2 border-ink-900 bg-white px-3 py-2 text-ink-800 outline-none transition focus:ring-2 focus:ring-brand-500/40"
+            className="mt-4 w-full rounded-xl border-2 border-ink-900 bg-surface-0 px-3 py-2 text-ink-800 outline-none transition focus:ring-2 focus:ring-brand-500/40"
             placeholder="Invite code"
           />
           <button

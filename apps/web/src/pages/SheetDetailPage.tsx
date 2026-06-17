@@ -120,7 +120,7 @@ export function SheetDetailPage() {
           </div>
           <button
             onClick={() => void load().catch((e) => setError(errorMessage(e)))}
-            className="rounded-xl border-2 border-ink-900 bg-white px-3 py-2 text-sm font-bold text-ink-800 shadow-pop-sm transition active:translate-y-0.5 active:shadow-none hover:bg-ink-100"
+            className="rounded-xl border-2 border-ink-900 bg-surface-0 px-3 py-2 text-sm font-bold text-ink-800 shadow-pop-sm transition active:translate-y-0.5 active:shadow-none hover:bg-ink-100"
           >
             Refresh
           </button>
@@ -134,19 +134,19 @@ export function SheetDetailPage() {
           <input
             value={problemName}
             onChange={(e) => setProblemName(e.target.value)}
-            className="sm:col-span-2 w-full rounded-xl border-2 border-ink-900 bg-white px-3 py-2 text-ink-800 outline-none transition focus:ring-2 focus:ring-brand-500/40"
+            className="sm:col-span-2 w-full rounded-xl border-2 border-ink-900 bg-surface-0 px-3 py-2 text-ink-800 outline-none transition focus:ring-2 focus:ring-brand-500/40"
             placeholder="Problem name"
           />
           <input
             value={platform}
             onChange={(e) => setPlatform(e.target.value)}
-            className="w-full rounded-xl border-2 border-ink-900 bg-white px-3 py-2 text-ink-800 outline-none transition focus:ring-2 focus:ring-brand-500/40"
+            className="w-full rounded-xl border-2 border-ink-900 bg-surface-0 px-3 py-2 text-ink-800 outline-none transition focus:ring-2 focus:ring-brand-500/40"
             placeholder="Platform"
           />
           <select
             value={difficulty}
             onChange={(e) => setDifficulty(e.target.value as Problem["difficulty"])}
-            className="w-full rounded-xl border-2 border-ink-900 bg-white px-3 py-2 text-ink-800 outline-none transition focus:ring-2 focus:ring-brand-500/40"
+            className="w-full rounded-xl border-2 border-ink-900 bg-surface-0 px-3 py-2 text-ink-800 outline-none transition focus:ring-2 focus:ring-brand-500/40"
           >
             <option value="easy">easy</option>
             <option value="medium">medium</option>
@@ -155,7 +155,7 @@ export function SheetDetailPage() {
           <input
             value={problemUrl}
             onChange={(e) => setProblemUrl(e.target.value)}
-            className="sm:col-span-2 w-full rounded-xl border-2 border-ink-900 bg-white px-3 py-2 text-ink-800 outline-none transition focus:ring-2 focus:ring-brand-500/40"
+            className="sm:col-span-2 w-full rounded-xl border-2 border-ink-900 bg-surface-0 px-3 py-2 text-ink-800 outline-none transition focus:ring-2 focus:ring-brand-500/40"
             placeholder="https://..."
           />
         </div>

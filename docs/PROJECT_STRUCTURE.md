@@ -44,6 +44,16 @@ cdeda/
         routes/             HTTP API route modules (auth, squads, threads, feed, platformData, execute)
         workers/            BullMQ queues and background jobs
           tasks/            Specific background tasks (refreshSquad, activityFeed, tokenCleanup)
+
+  packages/
+    shared/                 Shared types and constants
+      package.json
+      tsconfig.json
+      src/
+        index.ts
+    tsconfig/               Shared TypeScript configs
+      package.json
+      tsconfig.base.json
 ```
 
 ## Where To Edit
