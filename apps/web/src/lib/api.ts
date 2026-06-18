@@ -21,6 +21,33 @@ export function createApiClient(getToken: () => Promise<string | null>) {
     return config;
   });
 
+  const cache = new Map<string, { data: any; expiry: number }>();
+
+  // Override GET to use cache (60 seconds TTL)
+  const originalGet = client.get.bind(client);
+  client.get = async (url: string, config?: any) => {
+    const key = url;
+    const cached = cache.get(key);
+    if (cached && Date.now() < cached.expiry) {
+      // Simulate an Axios response
+      return { data: cached.data, status: 200, statusText: "OK", headers: {}, config: {} } as any;
+    }
+    const response = await originalGet(url, config);
+    cache.set(key, { data: response.data, expiry: Date.now() + 60000 });
+    return response;
+  };
+
+  // Invalidate cache on mutations
+  const invalidateAndRun = (method: Function) => async (...args: any[]) => {
+    cache.clear();
+    return method(...args);
+  };
+
+  client.post = invalidateAndRun(client.post.bind(client));
+  client.put = invalidateAndRun(client.put.bind(client));
+  client.patch = invalidateAndRun(client.patch.bind(client));
+  client.delete = invalidateAndRun(client.delete.bind(client));
+
   return client;
 }
 

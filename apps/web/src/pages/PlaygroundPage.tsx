@@ -1,7 +1,8 @@
-import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { usePageTitle } from "../lib/usePageTitle";
 import { useAuth } from "@clerk/clerk-react";
 import { createApiClient } from "../lib/api";
+import Editor from "@monaco-editor/react";
 
 /* ─── language config ─── */
 type Lang = "python" | "cpp";
@@ -49,7 +50,10 @@ export function PlaygroundPage() {
   const api = useMemo(() => createApiClient(() => getToken()), [getToken]);
 
   const [lang, setLang] = useState<Lang>("python");
-  const [code, setCode] = useState(DEFAULT_CODE.python);
+  const [code, setCode] = useState(() => {
+    const saved = localStorage.getItem("playground-code-python");
+    return saved ?? DEFAULT_CODE.python;
+  });
   const [stdin, setStdin] = useState("");
   const [stdout, setStdout] = useState("");
   const [stderr, setStderr] = useState("");
@@ -59,21 +63,17 @@ export function PlaygroundPage() {
   const [cpuTime, setCpuTime] = useState<string | null>(null);
   const [memory, setMemory] = useState<string | null>(null);
 
-  const editorRef = useRef<HTMLTextAreaElement>(null);
-  const lineNumbersRef = useRef<HTMLDivElement>(null);
-
-  /* sync scroll between line-numbers and editor */
-  const syncScroll = useCallback(() => {
-    if (editorRef.current && lineNumbersRef.current) {
-      lineNumbersRef.current.scrollTop = editorRef.current.scrollTop;
-    }
-  }, []);
+  /* persist code */
+  useEffect(() => {
+    localStorage.setItem(`playground-code-${lang}`, code);
+  }, [code, lang]);
 
   /* switch language */
   function switchLang(next: Lang) {
     if (next === lang) return;
     setLang(next);
-    setCode(DEFAULT_CODE[next]);
+    const saved = localStorage.getItem(`playground-code-${next}`);
+    setCode(saved ?? DEFAULT_CODE[next]);
     setStdout("");
     setStderr("");
     setExecTime(null);
@@ -136,87 +136,6 @@ export function PlaygroundPage() {
 
   /* line count */
   const lineCount = code.split("\n").length;
-
-  /* handle tab key and ctrl+/ in editor */
-  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === "Tab") {
-      e.preventDefault();
-      const ta = e.currentTarget;
-      const start = ta.selectionStart;
-      const end = ta.selectionEnd;
-      const newCode = code.substring(0, start) + "    " + code.substring(end);
-      setCode(newCode);
-      requestAnimationFrame(() => {
-        ta.selectionStart = ta.selectionEnd = start + 4;
-      });
-    } else if (e.key === "/" && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      const ta = e.currentTarget;
-      const start = ta.selectionStart;
-      const end = ta.selectionEnd;
-      
-      const before = code.substring(0, start);
-      const selected = code.substring(start, end);
-      const after = code.substring(end);
-      
-      const isCpp = lang === "cpp";
-      const commentToken = isCpp ? "// " : "# ";
-      
-      // If we have a selection spanning multiple lines
-      if (selected.includes("\n") || selected.length > 0) {
-         let lineStart = before.lastIndexOf("\n") + 1;
-         if (lineStart === 0 && before.length > 0 && before[0] !== '\n') {
-           lineStart = 0;
-         }
-         
-         const fullSelectedText = code.substring(lineStart, end);
-         const lines = fullSelectedText.split("\n");
-         
-         const allCommented = lines.every(l => l.trim() === "" || l.trimStart().startsWith(commentToken.trim()));
-         
-         const newLines = lines.map(line => {
-           if (line.trim() === "") return line;
-           if (allCommented) {
-             return line.replace(commentToken, "").replace(commentToken.trim(), "");
-           } else {
-             return commentToken + line;
-           }
-         });
-         
-         const newCode = code.substring(0, lineStart) + newLines.join("\n") + after;
-         setCode(newCode);
-         requestAnimationFrame(() => {
-            ta.selectionStart = lineStart;
-            ta.selectionEnd = lineStart + newLines.join("\n").length;
-         });
-      } else {
-         // Single line
-         const lineStart = before.lastIndexOf("\n") + 1;
-         const lineEndStr = after.indexOf("\n");
-         const lineEnd = lineEndStr === -1 ? code.length : end + lineEndStr;
-         
-         const line = code.substring(lineStart, lineEnd);
-         let newLine = line;
-         if (line.trimStart().startsWith(commentToken.trim())) {
-            newLine = line.replace(commentToken, "").replace(commentToken.trim(), "");
-         } else {
-            newLine = commentToken + line;
-         }
-         
-         const newCode = code.substring(0, lineStart) + newLine + code.substring(lineEnd);
-         setCode(newCode);
-         requestAnimationFrame(() => {
-            const diff = newLine.length - line.length;
-            ta.selectionStart = ta.selectionEnd = start + diff;
-         });
-      }
-    }
-  }
-
-  /* keep textarea height consistent */
-  useEffect(() => {
-    syncScroll();
-  }, [code, syncScroll]);
 
   return (
     <div className="grid grid-cols-1 gap-6">
@@ -316,29 +235,25 @@ export function PlaygroundPage() {
           </div>
 
           {/* Editor body */}
-          <div className="flex flex-1 overflow-hidden">
-            {/* Line numbers */}
-            <div
-              ref={lineNumbersRef}
-              className="select-none overflow-hidden bg-surface-2 text-right px-3 py-4 font-mono text-xs leading-6 text-ink-400 border-r-2 border-border shrink-0"
-              style={{ minWidth: 48 }}
-              aria-hidden
-            >
-              {Array.from({ length: lineCount }, (_, i) => (
-                <div key={i + 1}>{i + 1}</div>
-              ))}
-            </div>
-
-            {/* Textarea */}
-            <textarea
-              ref={editorRef}
+          <div className="flex flex-1 overflow-hidden bg-[#1e1e1e]">
+            <Editor
+              height="100%"
+              language={lang}
+              theme="vs-dark"
               value={code}
-              onChange={(e) => setCode(e.target.value)}
-              onScroll={syncScroll}
-              onKeyDown={handleKeyDown}
-              spellCheck={false}
-              className="flex-1 resize-none bg-surface-0 p-4 font-mono text-sm leading-6 text-ink-800 outline-none placeholder:text-ink-400"
-              placeholder="Write your code here..."
+              onChange={(value) => setCode(value || "")}
+              options={{
+                minimap: { enabled: false },
+                fontSize: 15,
+                lineHeight: 24,
+                padding: { top: 16 },
+                scrollBeyondLastLine: false,
+                smoothScrolling: true,
+                cursorBlinking: "smooth",
+                cursorSmoothCaretAnimation: "on",
+                formatOnPaste: true,
+                bracketPairColorization: { enabled: true },
+              }}
             />
           </div>
         </div>

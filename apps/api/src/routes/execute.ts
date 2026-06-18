@@ -27,13 +27,13 @@ executeRouter.post("/", requireClerkAuth, asyncRoute(async (req, res) => {
   }
 
   try {
-    const response = await fetch("https://ce.judge0.com/submissions?base64_encoded=false&wait=true", {
+    const response = await fetch("https://ce.judge0.com/submissions?base64_encoded=true&wait=true", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        source_code: code,
+        source_code: Buffer.from(code).toString('base64'),
         language_id: languageId,
-        stdin: stdin || "",
+        stdin: stdin ? Buffer.from(stdin).toString('base64') : "",
       }),
     });
 
@@ -48,13 +48,19 @@ executeRouter.post("/", requireClerkAuth, asyncRoute(async (req, res) => {
     };
 
     if (!response.ok) {
-      res.json({ stdout: "", stderr: "Code execution API returned an error.", code: 1 });
+      console.error("Judge0 API Error:", response.status, data);
+      res.json({ stdout: "", stderr: `Code execution API returned an error (Status ${response.status}).`, code: 1 });
       return;
     }
 
-    const stdout = data.stdout || "";
+    const decodeBase64 = (str: string | null | undefined) => {
+      if (!str) return "";
+      return Buffer.from(str, 'base64').toString('utf-8');
+    };
+
+    const stdout = decodeBase64(data.stdout);
     // If compilation fails, stderr comes in compile_output. Runtime errors in stderr.
-    const stderr = data.compile_output || data.stderr || data.message || "";
+    const stderr = decodeBase64(data.compile_output) || decodeBase64(data.stderr) || decodeBase64(data.message) || "";
     const statusCode = data.status?.id === 3 ? 0 : 1;
 
     res.json({
@@ -65,6 +71,7 @@ executeRouter.post("/", requireClerkAuth, asyncRoute(async (req, res) => {
       memory: data.memory ? `${data.memory} KB` : null,
     });
   } catch (error: any) {
+    console.error("Execute route error:", error);
     res.json({ stdout: "", stderr: error.message || "Failed to execute code", code: 1 });
   }
 }));
