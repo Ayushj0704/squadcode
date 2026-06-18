@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "../../prisma.js";
 
 const CF_API = "https://codeforces.com/api";
-const ALFA_BASE = "https://alfa-leetcode-api.onrender.com";
+const LC_GRAPHQL = "https://leetcode.com/graphql";
 
 type CfSubmission = {
   id?: number;
@@ -45,11 +45,11 @@ export async function pollCodeforces(params: { squadId: string; userId: string; 
   const cacheRow = await prisma.platformDataCache.findUnique({
     where: { userId_platform_cache: { userId: params.userId, platform: "codeforces" } }
   });
-  const isFirstSeen = !cacheRow;
-
   const cacheObj = asObject(cacheRow?.data) ?? {};
-  const known = new Set<number>();
   const prevSubs = (cacheObj.recentSubmissions as unknown[] | undefined) ?? [];
+  const isFirstSeen = !cacheRow || prevSubs.length === 0;
+
+  const known = new Set<number>();
   for (const s of prevSubs) {
     const id = numberOrNull(asObject(s)?.id);
     if (id !== null) known.add(id);
@@ -111,23 +111,59 @@ export async function pollLeetCode(params: { squadId: string; userId: string; us
   const cacheRow = await prisma.platformDataCache.findUnique({
     where: { userId_platform_cache: { userId: params.userId, platform: "leetcode" } }
   });
-  const isFirstSeen = !cacheRow;
   const cacheObj = asObject(cacheRow?.data) ?? {};
-  const known = new Set<string>();
   const prev = (cacheObj.recentAcceptedSubmissions as unknown[] | undefined) ?? [];
+  const isFirstSeen = !cacheRow || prev.length === 0;
+
+  const known = new Set<string>();
   for (const s of prev) {
     const o = asObject(s);
-    const key = typeof o?.key === "string" ? (o.key as string) : null;
+    // The stored shape has a 'key' field we write explicitly
+    const key = typeof o?.key === "string" ? (o.key as string)
+      // Fallback: reconstruct from stored timestamp+titleSlug for old cache rows
+      : (o?.timestamp && o?.titleSlug)
+        ? `${o.timestamp}-${o.titleSlug}`
+        : (o?.timestamp && o?.title)
+          ? `${o.timestamp}-${o.title}`
+          : null;
     if (key) known.add(key);
   }
 
-  const res = await axios.get(`${ALFA_BASE}/${encodeURIComponent(params.username)}/acSubmission`, {
-    headers: { Accept: "application/json" },
-    timeout: 20_000,
-    validateStatus: () => true
-  });
-  if (res.status < 200 || res.status >= 300) return;
-  const submissions = (res.data?.submission ?? []) as AlfaAcSubmission[];
+  // Use LeetCode's official GraphQL endpoint directly — no third-party proxy that can sleep
+  let submissions: AlfaAcSubmission[] = [];
+  try {
+    const res = await axios.post(
+      LC_GRAPHQL,
+      {
+        query: `query recentAcSubmissions($username: String!, $limit: Int!) {
+          recentAcSubmissionList(username: $username, limit: $limit) {
+            title
+            titleSlug
+            timestamp
+          }
+        }`,
+        variables: { username: params.username, limit: 15 }
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Referer": "https://leetcode.com",
+          "User-Agent": "Mozilla/5.0 (compatible; SquadCodeBot/1.0)"
+        },
+        timeout: 10_000,
+        validateStatus: () => true
+      }
+    );
+    if (res.status >= 200 && res.status < 300) {
+      submissions = (res.data?.data?.recentAcSubmissionList ?? []) as AlfaAcSubmission[];
+    } else {
+      console.warn(`LeetCode GraphQL returned ${res.status} for ${params.username}`);
+      return;
+    }
+  } catch (e) {
+    console.warn(`LeetCode GraphQL fetch failed for ${params.username}`, e);
+    return;
+  }
 
   const normalized = submissions
     .map((s) => {

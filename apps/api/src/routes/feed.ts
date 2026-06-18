@@ -12,24 +12,29 @@ feedRouter.get(
   asyncRoute(async (req, res) => {
     const squadId = String(req.params.squad_id);
     const clerkUserId = getClerkUserId(req);
-    const me = await prisma.user.findUnique({ where: { clerkId: clerkUserId } });
+
+    // Resolve internal userId first (needed to check membership)
+    const me = await prisma.user.findUnique({ where: { clerkId: clerkUserId }, select: { id: true } });
     if (!me) {
       res.status(400).json({ error: "User not synced yet. Call /api/auth/sync first." });
       return;
     }
 
-    const membership = await assertSquadMembership({ squadId, userId: me.id });
+    // Membership check + feed fetch in parallel
+    const [membership, items] = await Promise.all([
+      prisma.squadMember.findUnique({ where: { squadId_userId: { squadId, userId: me.id } } }),
+      prisma.activityFeed.findMany({
+        where: { squadId },
+        include: { user: { select: { id: true, username: true, email: true } } },
+        orderBy: { createdAt: "desc" },
+        take: 50
+      })
+    ]);
+
     if (!membership) {
       res.status(404).json({ error: "Squad not found" });
       return;
     }
-
-    const items = await prisma.activityFeed.findMany({
-      where: { squadId },
-      include: { user: { select: { id: true, username: true, email: true } } },
-      orderBy: { createdAt: "desc" },
-      take: 50
-    });
 
     res.json({
       items: items.map((i) => ({

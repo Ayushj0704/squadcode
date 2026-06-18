@@ -131,14 +131,21 @@ export function DashboardPage() {
 
   useEffect(() => {
     if (!selectedSquadId) return;
-    const timer = setInterval(() => {
-      void api
-        .get(`/feed/${selectedSquadId}`)
-        .then((res) => setFeed((res.data?.items ?? []) as FeedItem[]))
-        .catch(() => {});
+    // Bypass the axios in-memory cache so we always fetch fresh feed data
+    const timer = setInterval(async () => {
+      try {
+        const token = await getToken();
+        const headers: Record<string, string> = {};
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL ?? ""}/api/feed/${selectedSquadId}`, { headers });
+        if (res.ok) {
+          const data = await res.json() as { items?: FeedItem[] };
+          setFeed(data.items ?? []);
+        }
+      } catch { /* ignore network blips */ }
     }, 30_000);
     return () => clearInterval(timer);
-  }, [api, selectedSquadId]);
+  }, [api, selectedSquadId, getToken]);
 
   async function triggerRefresh() {
     if (!selectedSquadId) return;
@@ -426,18 +433,9 @@ function Stat(props: { label: string; value: string; sub: string }) {
 function ActivityFeedSection(props: { items: FeedItem[]; members: SquadMember[] }) {
   const items = props.items ?? [];
   const members = props.members ?? [];
-  const [now, setNow] = useState(0);
 
-  useEffect(() => {
-    setNow(Date.now());
-    const interval = setInterval(() => setNow(Date.now()), 60000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const last10hCutoff = now ? now - 10 * 60 * 60 * 1000 : 0;
-  
-  // Filter items to only show the last 10 hours, and take up to 20 to prevent clutter
-  const recentItems = items.filter((i) => new Date(i.createdAt).getTime() >= last10hCutoff).slice(0, 20);
+  // Show all 50 items from the server — no arbitrary time cutoff
+  const recentItems = items.slice(0, 50);
   const hasRecent = recentItems.length > 0;
 
   return (

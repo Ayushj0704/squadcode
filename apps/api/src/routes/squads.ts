@@ -140,38 +140,32 @@ squadsRouter.get(
   asyncRoute(async (req, res) => {
     const squadId = String(req.params.id);
     const clerkUserId = getClerkUserId(req);
-    const me = await prisma.user.findUnique({ where: { clerkId: clerkUserId } });
+
+    // Stage 1: resolve the internal userId (needed for membership query)
+    const me = await prisma.user.findUnique({ where: { clerkId: clerkUserId }, select: { id: true } });
     if (!me) {
       res.status(400).json({ error: "User not synced yet. Call /api/auth/sync first." });
       return;
     }
 
-    const membership = await prisma.squadMember.findUnique({
-      where: { squadId_userId: { squadId, userId: me.id } }
-    });
-    if (!membership) {
+    // Stage 2: fire all remaining queries in parallel — saves ~3-4 sequential round-trips
+    const [squad, members] = await Promise.all([
+      prisma.squad.findUnique({ where: { id: squadId }, select: { id: true, name: true, inviteCode: true } }),
+      prisma.squadMember.findMany({ where: { squadId }, include: { user: true }, orderBy: { joinedAt: "asc" } })
+    ]);
+
+    if (!squad || !members.some((m) => m.userId === me.id)) {
       res.status(404).json({ error: "Squad not found" });
       return;
     }
 
-    const squad = await prisma.squad.findUnique({
-      where: { id: squadId },
-      select: { id: true, name: true, inviteCode: true }
-    });
-
-    const members = await prisma.squadMember.findMany({
-      where: { squadId },
-      include: { user: true },
-      orderBy: { joinedAt: "asc" }
-    });
-
     const userIds = members.map((m) => m.userId);
-    const connections = await prisma.platformConnection.findMany({
-      where: { userId: { in: userIds } }
-    });
-    const caches = await prisma.platformDataCache.findMany({
-      where: { userId: { in: userIds } }
-    });
+
+    // Stage 3: connections + caches in parallel
+    const [connections, caches] = await Promise.all([
+      prisma.platformConnection.findMany({ where: { userId: { in: userIds } } }),
+      prisma.platformDataCache.findMany({ where: { userId: { in: userIds } } })
+    ]);
 
     const safeConnections = connections.map(c => ({
       id: c.id,

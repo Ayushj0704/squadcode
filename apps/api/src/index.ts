@@ -39,6 +39,7 @@ const ALLOWED_ORIGINS = [
   'http://127.0.0.1:5174',
   'http://localhost:8080',
   'https://squadcode.netlify.app',
+  'https://squadcode.onrender.com',
   process.env.FRONTEND_URL,
 ].filter(Boolean) as string[];
 
