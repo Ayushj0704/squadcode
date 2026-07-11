@@ -19,9 +19,10 @@ export function errorHandler(
 ) {
   // ── Validation errors ────────────────────────────────────────────────────
   if (err instanceof ZodError) {
+    console.warn(`[Validation Error] [${req.method} ${req.path}]`, err.issues);
     res.status(400).json({
       error: "Validation Error",
-      details: process.env.NODE_ENV === "development" ? err.issues : undefined
+      details: err.issues
     });
     return;
   }
