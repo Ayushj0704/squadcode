@@ -5,7 +5,14 @@ const requireAuthMiddleware = requireAuth();
 
 export const requireClerkAuth: RequestHandler = (req, res, next) => {
   if (!process.env.CLERK_SECRET_KEY) {
-    res.status(500).json({ error: "Server missing CLERK_SECRET_KEY config" });
+    // Log prominently so this shows up clearly in Render / deployment logs.
+    console.error(
+      "[requireClerkAuth] CLERK_SECRET_KEY is not set. " +
+      "Add it to your Render environment variables and redeploy."
+    );
+    res.status(503).json({
+      error: "Server is missing CLERK_SECRET_KEY. Contact the administrator."
+    });
     return;
   }
   return requireAuthMiddleware(req, res, next);
