@@ -28,6 +28,7 @@ export function OnboardingPage() {
   async function syncMe() {
     setStatus(null);
     if (!username.trim()) throw new Error("Username required");
+    if (username.trim().length < 3) throw new Error("Username must be at least 3 characters");
     if (!email) throw new Error("Email missing in Clerk profile");
     await api.post("/auth/sync", { username: username.trim(), email });
   }
@@ -145,7 +146,10 @@ export function OnboardingPage() {
 
 function errorMessage(e: unknown) {
   if (axios.isAxiosError(e)) {
-    const data = e.response?.data as { error?: string } | undefined;
+    const data = e.response?.data as { error?: string; details?: { message: string }[] } | undefined;
+    if (data?.details && Array.isArray(data.details) && data.details.length > 0) {
+      return data.details.map(d => d.message).join(", ");
+    }
     return data?.error ?? e.message ?? "Request failed";
   }
   if (e instanceof Error) return e.message;

@@ -81,5 +81,9 @@ export function errorHandler(
   const message = err instanceof Error ? err.message : String(err);
   const stack = err instanceof Error ? err.stack : undefined;
   console.error(`[${req.method} ${req.path}] Unhandled error: ${message}`, stack ?? err);
-  res.status(500).json({ error: "Internal Server Error" });
+  res.status(500).json({ 
+    error: "Internal Server Error", 
+    message: message, 
+    stack: process.env.NODE_ENV === "development" ? stack : undefined 
+  });
 }

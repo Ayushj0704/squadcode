@@ -20,26 +20,37 @@ authRouter.post(
     const clerkUserId = getClerkUserId(req);
 
     try {
-      const existing = await prisma.user.findUnique({ where: { clerkId: clerkUserId } });
+      // 1. Try to find the user by the current Clerk ID
+      let existing = await prisma.user.findUnique({ where: { clerkId: clerkUserId } });
+
+      // 2. If not found by Clerk ID, check if they exist by email.
+      // This happens when you switch between Production and Development Clerk instances.
+      // The Clerk ID changes, but the email remains the same.
+      if (!existing) {
+        existing = await prisma.user.findUnique({ where: { email } });
+      }
+
       const user = existing
         ? await prisma.user.update({
-            where: { clerkId: clerkUserId },
-            data: { email }
+            where: { id: existing.id }, // Use internal ID to update safely
+            data: { 
+              clerkId: clerkUserId, // Update the clerkId to the current environment's ID
+              email // Update email just in case it changed
+            }
           })
         : await prisma.user.create({
             data: { clerkId: clerkUserId, username, email }
           });
 
       res.json({ user });
-    } catch (err) {
-      // Surface a helpful message when the chosen username is already taken
-      // instead of letting the P2002 Prisma error become a generic 500.
-      if (
-        err instanceof PrismaClientKnownRequestError &&
-        err.code === "P2002"
-      ) {
-        res.status(409).json({ error: `Username "${username}" is already taken. Please choose another.` });
-        return;
+    } catch (err: any) {
+      // Safely check for Prisma P2002 without using instanceof which can fail in ESM
+      if (err && typeof err === "object" && err.code === "P2002") {
+        const target = err.meta?.target as string[] | undefined;
+        if (target?.includes("username")) {
+          res.status(409).json({ error: `Username "${username}" is already taken. Please choose another.` });
+          return;
+        }
       }
       throw err; // re-throw anything else so the global errorHandler handles it
     }
