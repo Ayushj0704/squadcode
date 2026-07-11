@@ -105,7 +105,14 @@ app.use(express.static(path.join(__dirname, "../../web/dist")));
 app.use((req, res, next) => {
   // Skip API routes — let them fall through to notFoundHandler
   if (req.path.startsWith('/api')) return next();
-  res.sendFile(path.join(__dirname, "../../web/dist/index.html"));
+  const indexPath = path.join(__dirname, "../../web/dist/index.html");
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      // index.html not found (frontend not built in this deployment)
+      // Return JSON 404 instead of letting Express generate a 500.
+      res.status(404).json({ error: "Frontend not available. Visit the Netlify URL instead." });
+    }
+  });
 });
 
 app.use(notFoundHandler);

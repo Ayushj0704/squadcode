@@ -3,7 +3,8 @@ import { ZodError } from "zod";
 import {
   PrismaClientKnownRequestError,
   PrismaClientInitializationError,
-  PrismaClientUnknownRequestError
+  PrismaClientUnknownRequestError,
+  PrismaClientValidationError
 } from "@prisma/client/runtime/library";
 
 export function notFoundHandler(_req: Request, res: Response) {
@@ -18,21 +19,37 @@ export function errorHandler(
 ) {
   // ── Validation errors ────────────────────────────────────────────────────
   if (err instanceof ZodError) {
-    res.status(400).json({ error: "Validation Error", details: process.env.NODE_ENV === 'development' ? err.issues : undefined });
+    res.status(400).json({
+      error: "Validation Error",
+      details: process.env.NODE_ENV === "development" ? err.issues : undefined
+    });
     return;
   }
 
-  // ── Prisma: known errors (constraint violations etc.) ────────────────────
+  // ── Prisma: known constraint / query errors ───────────────────────────────
   if (err instanceof PrismaClientKnownRequestError) {
     if (err.code === "P2002") {
-      res.status(409).json({ error: "Unique constraint violation" });
+      res.status(409).json({ error: "A record with that value already exists." });
       return;
     }
+    if (err.code === "P2025") {
+      res.status(404).json({ error: "Record not found." });
+      return;
+    }
+    // All other known Prisma codes — log and return 400
+    console.error(`[Prisma ${err.code}] [${req.method} ${req.path}]`, err.message);
+    res.status(400).json({ error: `Database error: ${err.code}` });
+    return;
   }
 
-  // ── Prisma: database unreachable / not connected ─────────────────────────
-  // This is the most common cause of 500s on Render when DATABASE_URL is
-  // wrong, the Postgres instance is sleeping, or the connection pool is exhausted.
+  // ── Prisma: validation error (wrong field types / missing fields) ─────────
+  if (err instanceof PrismaClientValidationError) {
+    console.error(`[PrismaValidation] [${req.method} ${req.path}]`, err.message);
+    res.status(400).json({ error: "Database query validation failed." });
+    return;
+  }
+
+  // ── Prisma: database unreachable / not connected ──────────────────────────
   if (
     err instanceof PrismaClientInitializationError ||
     err instanceof PrismaClientUnknownRequestError
@@ -46,7 +63,6 @@ export function errorHandler(
 
   // ── Clerk SDK errors ──────────────────────────────────────────────────────
   // Clerk errors have { clerkError: true, status, message }.
-  // Without this block they silently become 500 — masking the real auth cause.
   if (
     err !== null &&
     typeof err === "object" &&
@@ -55,12 +71,14 @@ export function errorHandler(
   ) {
     const clerkErr = err as { status?: number; message?: string };
     const status = clerkErr.status ?? 401;
+    console.warn(`[Clerk] [${req.method} ${req.path}]`, clerkErr.message);
     res.status(status).json({ error: clerkErr.message ?? "Unauthorized" });
     return;
   }
 
   // ── Fallback ──────────────────────────────────────────────────────────────
   const message = err instanceof Error ? err.message : String(err);
-  console.error(`[${req.method} ${req.path}] Unhandled error: ${message}`, err);
+  const stack = err instanceof Error ? err.stack : undefined;
+  console.error(`[${req.method} ${req.path}] Unhandled error: ${message}`, stack ?? err);
   res.status(500).json({ error: "Internal Server Error" });
 }

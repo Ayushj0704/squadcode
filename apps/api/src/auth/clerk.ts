@@ -1,11 +1,17 @@
 import type { Request, RequestHandler } from "express";
-import { getAuth, requireAuth } from "@clerk/express";
+import { getAuth } from "@clerk/express";
 
-const requireAuthMiddleware = requireAuth();
+// NOTE: We intentionally do NOT use requireAuth() here.
+// requireAuth() calls response.redirect("/") when no userId is found — which
+// is fine for web pages but wrong for API endpoints. A redirect from an API
+// route causes the Axios client to follow it, potentially hitting the SPA
+// fallback and getting a 500 if index.html is absent.
+//
+// Instead we rely on clerkMiddleware() (registered globally in index.ts) to
+// populate req.auth, and do our own userId check that returns 401 JSON.
 
 export const requireClerkAuth: RequestHandler = (req, res, next) => {
   if (!process.env.CLERK_SECRET_KEY) {
-    // Log prominently so this shows up clearly in Render / deployment logs.
     console.error(
       "[requireClerkAuth] CLERK_SECRET_KEY is not set. " +
       "Add it to your Render environment variables and redeploy."
@@ -16,32 +22,32 @@ export const requireClerkAuth: RequestHandler = (req, res, next) => {
     return;
   }
 
-  // Run Clerk's requireAuth, then verify auth context was actually populated.
-  // If CLERK_SECRET_KEY is for a different app than the JWT's issuer, Clerk
-  // may call next() without setting auth.userId — which would throw a generic
-  // Error in getClerkUserId and silently become a 500.
-  return requireAuthMiddleware(req, res, (err?: unknown) => {
-    if (err) return next(err); // Clerk already rejected — let errorHandler handle it
-
+  try {
     const auth = getAuth(req);
+
     if (!auth.userId) {
-      console.error(
-        "[requireClerkAuth] Clerk passed but auth.userId is missing. " +
-        "Possible CLERK_SECRET_KEY mismatch (wrong Clerk app). " +
-        `Expected issuer from token: check your Render env CLERK_SECRET_KEY starts with sk_test_ and matches VITE_CLERK_PUBLISHABLE_KEY app.`
+      // clerkMiddleware ran but couldn't authenticate this request
+      // (expired token, wrong Clerk instance, missing token, etc.)
+      console.warn(
+        "[requireClerkAuth] Request rejected — no userId in auth context. " +
+        "Possible causes: expired JWT, CLERK_SECRET_KEY mismatch, or missing Authorization header."
       );
-      res.status(401).json({
-        error: "Unauthorized: could not resolve user. Check that CLERK_SECRET_KEY on the server matches your frontend Clerk app."
-      });
+      res.status(401).json({ error: "Unauthorized" });
       return;
     }
 
     next();
-  });
+  } catch (err) {
+    // getAuth() throws if clerkMiddleware hasn't run yet.
+    // In practice this shouldn't happen since clerkMiddleware is global,
+    // but we handle it to avoid a hard 500.
+    console.error("[requireClerkAuth] getAuth() threw unexpectedly:", err);
+    res.status(401).json({ error: "Unauthorized" });
+  }
 };
 
-export function getClerkUserId(req: Request) {
+export function getClerkUserId(req: Request): string {
   const auth = getAuth(req);
-  if (!auth.userId) throw new Error("Missing auth context");
+  if (!auth.userId) throw new Error("Missing auth context — requireClerkAuth should have blocked this");
   return auth.userId;
 }
