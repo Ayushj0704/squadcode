@@ -15,7 +15,10 @@ threadsRouter.get(
     const clerkUserId = getClerkUserId(req);
     const me = await prisma.user.findUnique({ where: { clerkId: clerkUserId } });
     if (!me) {
-      res.status(400).json({ error: "User not synced yet. Call /api/auth/sync first." });
+      // 503 tells the client this is a temporary condition (not a permanent 400 bad-request).
+      // The frontend SSE hook will catch this, see a non-ok response, and retry after its
+      // 5-second backoff — exactly what we want when the user hasn't completed /auth/sync yet.
+      res.status(503).set("Retry-After", "5").json({ error: "User not synced yet. Call /api/auth/sync first." });
       return;
     }
 

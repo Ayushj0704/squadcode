@@ -21,6 +21,8 @@ export function useThreadPostNotifications(
     let cancelled = false;
     let abortController: AbortController | null = null;
     let retryTimer: number | null = null;
+    // Exponential backoff: start at 5s, double each failure, cap at 60s.
+    let retryDelayMs = 5_000;
 
     primeAudioOnInteraction();
 
@@ -35,7 +37,32 @@ export function useThreadPostNotifications(
           signal: abortController.signal
         });
 
-        if (!res.ok || !res.body) throw new Error("Notification stream failed");
+        if (!res.ok || !res.body) {
+          // Non-ok HTTP status (400, 503, etc.) — NOT a permanent failure.
+          // Honour a Retry-After header if present (e.g. 503 from the server when
+          // the user hasn't completed /auth/sync yet).
+          const retryAfterHeader = res.headers.get("Retry-After");
+          const serverDelay = retryAfterHeader
+            ? parseInt(retryAfterHeader, 10) * 1_000
+            : null;
+
+          // Only log the first time (retryDelayMs === 5_000) to avoid console spam.
+          if (retryDelayMs === 5_000) {
+            console.warn(
+              `[ThreadSSE] stream responded with ${res.status}. Will retry. Hint: ${
+                res.status === 503
+                  ? "User not yet synced — complete onboarding first."
+                  : "Unexpected server error."
+              }`
+            );
+          }
+
+          scheduleRetry(serverDelay ?? retryDelayMs);
+          return;
+        }
+
+        // Connection succeeded — reset backoff.
+        retryDelayMs = 5_000;
 
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
@@ -57,10 +84,19 @@ export function useThreadPostNotifications(
           }
         }
       } catch {
-        if (!cancelled) {
-          retryTimer = window.setTimeout(connect, 5_000);
-        }
+        // Network error or AbortError (from cleanup). If cancelled, don't retry.
       }
+
+      if (!cancelled) {
+        scheduleRetry(retryDelayMs);
+      }
+    }
+
+    function scheduleRetry(delayMs: number) {
+      if (cancelled) return;
+      // Grow the backoff for next time, capped at 60 seconds.
+      retryDelayMs = Math.min(retryDelayMs * 2, 60_000);
+      retryTimer = window.setTimeout(connect, delayMs);
     }
 
     void connect();

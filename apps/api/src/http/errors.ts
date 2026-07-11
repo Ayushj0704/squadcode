@@ -8,7 +8,7 @@ export function notFoundHandler(_req: Request, res: Response) {
 
 export function errorHandler(
   err: unknown,
-  _req: Request,
+  req: Request,
   res: Response,
   _next: NextFunction
 ) {
@@ -24,6 +24,22 @@ export function errorHandler(
     }
   }
 
-  console.error(err);
+  // Clerk SDK errors have a `clerkError: true` property and a `status` field.
+  // Without this block they fall through to the generic 500 handler, masking the
+  // real cause (e.g. missing / expired JWT → 401, missing key → 500).
+  if (
+    err !== null &&
+    typeof err === "object" &&
+    "clerkError" in err &&
+    (err as { clerkError: boolean }).clerkError === true
+  ) {
+    const clerkErr = err as { status?: number; message?: string };
+    const status = clerkErr.status ?? 401;
+    res.status(status).json({ error: clerkErr.message ?? "Unauthorized" });
+    return;
+  }
+
+  console.error(`[${req.method} ${req.path}]`, err);
   res.status(500).json({ error: "Internal Server Error" });
 }
+
