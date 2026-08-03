@@ -1,0 +1,23 @@
+# SquadCode
+
+> SquadCode is a private dashboard for competitive-programming squads. It brings verified platform profiles (Codeforces, LeetCode, GitHub), private contest discussion threads, shared practice-problem sheets, squad leaderboards, and analytics into one place so a group can train together.
+
+SquadCode is a single-page web app. Most functionality lives behind authentication and is not publicly crawlable; the pages below are the public, indexable surface.
+
+## Core
+
+- [Home](https://squadcode.app/): Product overview, features, and sign-up.
+- [Public profiles](https://squadcode.app/u/): Shareable read-only member profile cards at `/u/{username}`, showing verified Codeforces, LeetCode, and GitHub stats.
+
+## Features
+
+- Verified connections: Members link Codeforces/LeetCode/GitHub accounts and prove ownership via a one-time token placed in an editable profile field.
+- Contest threads: Private per-squad discussion threads with code snippets, runnable code, and emoji reactions.
+- Practice sheets: Shared problem sets with due dates and per-member progress.
+- Leaderboards & analytics: Squad rankings and trends derived from synced platform data.
+- Notifications: In-app real-time alerts and optional Web Push for new thread replies.
+
+## Notes
+
+- Authenticated areas (dashboard, settings, threads, sheets, playground, calendar, leaderboard, analytics, challenges) require sign-in and are intentionally excluded from indexing — see /robots.txt.
+- SquadCode is not affiliated with Codeforces, LeetCode, or GitHub; it reads public profile data via their APIs with the member's consent.
