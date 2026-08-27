@@ -295,7 +295,7 @@ export function DashboardPage() {
               member={m} 
               connections={dashboard.connections} 
               caches={dashboard.caches} 
-              isMe={m.user.email === user?.primaryEmailAddress?.emailAddress}
+              isMe={m.user.email === user?.email}
               squadId={dashboard?.squad?.id}
               api={api}
               onNicknameUpdated={() => triggerRefresh()}

@@ -157,7 +157,7 @@ export function AppShell() {
                 </span>
               ) : null}
             </button>
-            <UserButton afterSignOutUrl="/" />
+            <UserButton />
           </div>
         </div>
         <nav className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-4 pb-3 sm:px-6 lg:hidden">

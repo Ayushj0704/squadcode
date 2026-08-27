@@ -17,7 +17,7 @@ export function OnboardingPage() {
   const api = useMemo(() => createApiClient(() => getToken()), [getToken]);
 
   const [username, setUsername] = useState(user?.username ?? "");
-  const email = user?.primaryEmailAddress?.emailAddress ?? "";
+  const email = user?.email ?? "";
 
   const [status, setStatus] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);

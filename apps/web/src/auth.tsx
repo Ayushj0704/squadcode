@@ -125,7 +125,7 @@ export const GoogleLoginButton = () => {
   );
 };
 
-export const SignInButton = ({ children, mode }: { children?: React.ReactNode, mode?: string }) => {
+export const SignInButton = ({ children }: { children?: React.ReactNode, mode?: string }) => {
   if (children) {
     return <div className="relative group">
       {children}
