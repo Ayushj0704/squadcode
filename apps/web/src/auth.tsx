@@ -106,7 +106,8 @@ export const GoogleLoginButton = () => {
     <GoogleLogin
       onSuccess={async (credentialResponse) => {
         if (!credentialResponse.credential) return;
-        const res = await fetch("/api/auth/login", {
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || "";
+        const res = await fetch(`${baseUrl}/api/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ credential: credentialResponse.credential }),
