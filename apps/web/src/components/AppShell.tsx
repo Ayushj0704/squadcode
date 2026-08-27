@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
-import { UserButton, useAuth } from "@clerk/clerk-react";
+import { UserButton, useAuth } from "../auth";
 import { useSquadStore } from "../store/squadStore";
 import { useNotificationStore } from "../store/notificationStore";
 import { useThreadPostNotifications } from "../lib/useThreadPostNotifications";

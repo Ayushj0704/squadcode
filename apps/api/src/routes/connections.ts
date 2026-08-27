@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { requireClerkAuth, getClerkUserId } from "../auth/clerk.js";
+import { requireClerkAuth, getClerkUserId } from "../auth/google.js";
 import { asyncRoute } from "../http/asyncRoute.js";
 import { prisma } from "../prisma.js";
 import { randomToken } from "../lib/random.js";

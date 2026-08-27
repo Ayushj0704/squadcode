@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useAuth, useUser } from "@clerk/clerk-react";
+import { useAuth, useUser } from "../auth";
 import axios from "axios";
 import { createApiClient, type SquadMember } from "../lib/api";
 import { useSquadStore } from "../store/squadStore";

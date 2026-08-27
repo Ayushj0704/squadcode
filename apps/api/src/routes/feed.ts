@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { requireClerkAuth, getClerkUserId } from "../auth/clerk.js";
+import { requireClerkAuth, getClerkUserId } from "../auth/google.js";
 import { asyncRoute } from "../http/asyncRoute.js";
 import { prisma } from "../prisma.js";
 import { assertSquadMembership } from "../auth/membership.js";

@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../prisma.js";
 import { asyncRoute } from "../http/asyncRoute.js";
-import { requireClerkAuth, getClerkUserId } from "../auth/clerk.js";
+import { requireClerkAuth, getClerkUserId } from "../auth/google.js";
 
 export const squadsRouter = Router();
 

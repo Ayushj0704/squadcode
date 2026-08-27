@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { usePageTitle } from "../lib/usePageTitle";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "../auth";
 import { createApiClient } from "../lib/api";
 import Editor from "@monaco-editor/react";
 

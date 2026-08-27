@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "../auth";
 import axios from "axios";
 import { createApiClient } from "../lib/api";
 import { useSquadStore } from "../store/squadStore";

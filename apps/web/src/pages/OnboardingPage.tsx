@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useAuth, useUser } from "@clerk/clerk-react";
+import { useAuth, useUser } from "../auth";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { createApiClient } from "../lib/api";

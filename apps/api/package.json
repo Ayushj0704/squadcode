@@ -13,7 +13,6 @@
     "db:studio": "prisma studio"
   },
   "dependencies": {
-    "@clerk/express": "^1.0.0",
     "@prisma/client": "^6.0.0",
     "axios": "^1.9.0",
     "cheerio": "^1.1.0",
@@ -21,7 +20,9 @@
     "dotenv": "^17.0.0",
     "express": "^5.1.0",
     "express-rate-limit": "^8.5.2",
+    "google-auth-library": "^11.0.2",
     "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.3",
     "morgan": "^1.10.0",
     "zod": "^4.0.0"
   },
@@ -29,6 +30,7 @@
     "@eslint/js": "^9.0.0",
     "@types/cors": "^2.8.18",
     "@types/express": "^5.0.3",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/morgan": "^1.9.9",
     "eslint": "^9.0.0",
     "prisma": "^6.0.0",

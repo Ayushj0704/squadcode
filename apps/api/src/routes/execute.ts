@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { asyncRoute } from "../http/asyncRoute.js";
-import { requireClerkAuth } from "../auth/clerk.js";
+import { requireClerkAuth } from "../auth/google.js";
 
 export const executeRouter = Router();
 

@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
-import { SignedIn, SignedOut } from "@clerk/clerk-react";
+import { SignedIn, SignedOut } from "./auth";
 import { LandingPage } from "./pages/LandingPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
 import { DashboardPage } from "./pages/DashboardPage";
@@ -21,7 +21,7 @@ import { CalendarPage } from "./pages/CalendarPage";
 import { LeaderboardPage } from "./pages/LeaderboardPage";
 
 export default function App() {
-  const missingClerkKey = !import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+  const missingClerkKey = !import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
   if (missingClerkKey) {
     return (
@@ -30,7 +30,7 @@ export default function App() {
           <h1 className="text-xl font-semibold">SquadCode setup</h1>
           <p className="mt-2 text-slate-300">
             Missing{" "}
-            <code className="text-slate-100">VITE_CLERK_PUBLISHABLE_KEY</code>.
+            <code className="text-slate-100">VITE_GOOGLE_CLIENT_ID</code>.
             Add it to <code className="text-slate-100">apps/web/.env</code> (or
             root <code className="text-slate-100">.env</code>) and restart.
           </p>

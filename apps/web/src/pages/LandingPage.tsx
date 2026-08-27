@@ -1,4 +1,4 @@
-import { SignInButton, SignUpButton } from "@clerk/clerk-react";
+import { SignInButton, SignUpButton } from "../auth";
 import { usePageTitle } from "../lib/usePageTitle";
 
 export function LandingPage() {

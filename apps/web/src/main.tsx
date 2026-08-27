@@ -1,11 +1,11 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { ClerkProvider } from "@clerk/clerk-react";
+import { ClerkProvider } from "./auth";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import "./index.css";
 
-const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as
+const publishableKey = import.meta.env.VITE_GOOGLE_CLIENT_ID as
   | string
   | undefined;
 
