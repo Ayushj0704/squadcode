@@ -22,20 +22,38 @@ authRouter.post(
       return;
     }
 
-    const { email, sub: googleId, name } = payload;
+    const { email, sub: googleId } = payload;
     
     // Auto-generate username from email if creating new user
-    const defaultUsername = email.split('@')[0] + Math.floor(Math.random() * 1000);
+    const defaultUsername = email.split('@')[0] + Math.floor(Math.random() * 10000);
 
-    const existing = await prisma.user.findUnique({ where: { clerkId: googleId } });
-    const user = existing
-      ? await prisma.user.update({
-          where: { clerkId: googleId },
-          data: { email }
-        })
-      : await prisma.user.create({
-          data: { clerkId: googleId, username: defaultUsername, email }
+    let existing = await prisma.user.findUnique({ where: { clerkId: googleId } });
+    if (!existing) {
+      existing = await prisma.user.findFirst({ 
+        where: { email: { equals: email, mode: 'insensitive' } } 
+      });
+    }
+
+    let user;
+    try {
+      user = existing
+        ? await prisma.user.update({
+            where: { id: existing.id }, 
+            data: { clerkId: googleId, email }
+          })
+        : await prisma.user.create({
+            data: { clerkId: googleId, username: defaultUsername, email }
+          });
+    } catch (innerErr: any) {
+      if (innerErr && typeof innerErr === "object" && innerErr.code === "P2002") {
+        user = await prisma.user.findFirst({ 
+          where: { email: { equals: email, mode: 'insensitive' } } 
         });
+        if (!user) throw innerErr; 
+      } else {
+        throw innerErr;
+      }
+    }
 
     const token = jwt.sign(
       { userId: user.id, googleId },
