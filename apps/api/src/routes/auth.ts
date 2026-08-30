@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../prisma.js";
 import { asyncRoute } from "../http/asyncRoute.js";
-import { verifyGoogleIdToken } from "../auth/google.js";
+import { verifyGoogleIdToken, requireClerkAuth, getClerkUserId } from "../auth/google.js";
 import jwt from "jsonwebtoken";
 
 export const authRouter = Router();
@@ -62,5 +62,26 @@ authRouter.post(
     );
 
     res.json({ user, token });
+  })
+);
+
+const syncBodySchema = z.object({
+  username: z.string().min(3),
+  email: z.string().email(),
+});
+
+authRouter.post(
+  "/sync",
+  requireClerkAuth,
+  asyncRoute(async (req, res) => {
+    const { username } = syncBodySchema.parse(req.body);
+    const googleId = getClerkUserId(req);
+
+    const user = await prisma.user.update({
+      where: { clerkId: googleId },
+      data: { username }
+    });
+
+    res.json({ user });
   })
 );
